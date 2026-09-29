@@ -1,0 +1,479 @@
+'use strict';
+/* Cascade: goals + time tracking. Data lives in this browser's localStorage. */
+const LEVELS = ['yearly', 'monthly', 'weekly', 'daily'];
+const STATUSES = ['not_started', 'in_progress', 'done', 'blocked'];
+const KEY = 'cascade.v1';
+const IDLE_MS = 2 * 3600e3;
+
+/* ---------- state ---------- */
+let S = load();
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.users) return s; } catch (e) {}
+  return {
+    users: [{ id: 'u1', name: 'Ishiaqtech', email: 'ishitechagency.io@gmail.com', role: 'admin', team_id: 't1' }],
+    teams: [{ id: 't1', name: 'Ishiaqtech', admin_user_id: 'u1' }],
+    goals: [], checkins: [], projects: [], entries: [], templates: [], me: null, timer: null, selected: []
+  };
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+const uid = p => p + Math.random().toString(36).slice(2, 9);
+const now = () => new Date().toISOString();
+const pad = n => String(n).padStart(2, '0');
+const dstr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => dstr(new Date());
+const dayOf = iso => dstr(new Date(iso));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtMin = m => { m = Math.round(m); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
+const label = s => s.replace('_', ' ');
+
+/* ---------- data access (privacy enforced here) ---------- */
+const me = () => S.users.find(u => u.id === S.me);
+const user = id => S.users.find(u => u.id === id);
+const goal = id => S.goals.find(g => g.id === id);
+const kids = id => S.goals.filter(g => g.parent_goal_id === id);
+const project = id => S.projects.find(p => p.id === id);
+const teamMembers = () => S.users.filter(u => u.team_id === me().team_id);
+const canSee = g => g && (g.owner_id === S.me || (me().role === 'admin' && teamMembers().some(u => u.id === g.owner_id) && g.level !== 'weekly' && g.level !== 'daily'));
+const canEdit = g => g && g.owner_id === S.me;
+const mine = () => S.goals.filter(g => g.owner_id === S.me);
+const nextLevel = l => LEVELS[LEVELS.indexOf(l) + 1];
+const prog = g => g.status === 'done' ? 100 : (g.level === 'daily' ? 0 : (g.progress || 0));
+const barClass = p => p < 33 ? 'red' : p <= 66 ? 'yellow' : 'green';
+const bar = p => `<div class="bar ${barClass(p)}"><i style="width:${p}%"></i></div>`;
+
+function subtree(id) { const out = [id]; kids(id).forEach(k => out.push(...subtree(k.id))); return out; }
+
+function setStatus(g, s) {
+  g.status = s;
+  if (s === 'done') g.completed_at = g.completed_at || now(); else g.completed_at = null;
+  g.updated_at = now();
+}
+/* Roll progress up the tree. Non-daily goals average their children; done when all children done unless manually overridden. */
+function recalc(id) {
+  const g = goal(id); if (!g) return;
+  const ch = kids(id);
+  if (g.level !== 'daily' && ch.length) {
+    g.progress = Math.round(ch.reduce((a, c) => a + prog(c), 0) / ch.length);
+    if (!g.override) {
+      const ns = g.progress === 100 ? 'done' : g.progress > 0 ? 'in_progress' : (g.status === 'blocked' ? 'blocked' : 'not_started');
+      if (ns !== g.status) setStatus(g, ns);
+    }
+  }
+  if (g.parent_goal_id) recalc(g.parent_goal_id);
+}
+function changeStatus(id, s) {
+  const g = goal(id); if (!canEdit(g)) return;
+  if (g.level !== 'daily') g.override = true;
+  setStatus(g, s);
+  recalc(g.parent_goal_id);
+  save();
+}
+function addGoal(o) {
+  const g = { id: uid('g'), title: o.title, description: o.description || '', level: o.level, parent_goal_id: o.parent || null, owner_id: S.me,
+    status: 'not_started', target_date: o.target_date || '', progress: 0, archived: false, created_at: now(), updated_at: now() };
+  S.goals.push(g); if (g.parent_goal_id) recalc(g.parent_goal_id); save(); return g;
+}
+function deleteGoal(id) {
+  const g = goal(id), ids = new Set(subtree(id));
+  S.goals = S.goals.filter(x => !ids.has(x.id));
+  S.checkins = S.checkins.filter(c => !ids.has(c.goal_id));
+  S.entries.forEach(e => { if (ids.has(e.goal_id)) e.goal_id = null; });
+  if (g.parent_goal_id) recalc(g.parent_goal_id);
+  save();
+}
+
+/* ---------- stats (derived on demand, equivalent to DailyStats) ---------- */
+function entryMin(e) { return e.duration_minutes; }
+function stats(uidv, date) {
+  const es = S.entries.filter(e => e.user_id === uidv && dayOf(e.start_time) === date);
+  const done = S.goals.filter(g => g.owner_id === uidv && g.level === 'daily' && g.completed_at && dayOf(g.completed_at) === date);
+  let total = es.reduce((a, e) => a + entryMin(e), 0);
+  if (S.timer && S.timer.user_id === uidv && dayOf(new Date(S.timer.start).toISOString()) === date) total += (Date.now() - S.timer.start) / 60000;
+  return { total, tasks: done.length, touched: new Set(es.map(e => e.goal_id).filter(Boolean)).size };
+}
+function weekMinutes(uidv) {
+  const from = Date.now() - 6 * 864e5; const f = dstr(new Date(from));
+  return S.entries.filter(e => e.user_id === uidv && dayOf(e.start_time) >= f).reduce((a, e) => a + entryMin(e), 0);
+}
+function streak() {
+  const days = new Set(mine().filter(g => g.level === 'daily' && g.completed_at).map(g => dayOf(g.completed_at)));
+  let n = 0, d = new Date(); if (!days.has(dstr(d))) d.setDate(d.getDate() - 1);
+  while (days.has(dstr(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function goalMinutes(id) {
+  const ids = new Set(subtree(id));
+  return S.entries.filter(e => ids.has(e.goal_id)).reduce((a, e) => a + entryMin(e), 0);
+}
+
+/* ---------- timer ---------- */
+function startTimer(o) {
+  if (S.timer) stopTimer();
+  S.timer = { user_id: S.me, start: Date.now(), project_id: o.project_id || null, goal_id: o.goal_id || null, note: o.note || '', lastConfirm: Date.now() };
+  save(); render();
+}
+function stopTimer(endAt) {
+  const t = S.timer; if (!t) return;
+  const end = endAt || Date.now();
+  const mins = Math.max(1, Math.round((end - t.start) / 60000));
+  S.entries.push({ id: uid('e'), user_id: t.user_id, project_id: t.project_id, goal_id: t.goal_id, start_time: new Date(t.start).toISOString(), end_time: new Date(end).toISOString(), duration_minutes: mins, note: t.note });
+  S.timer = null; save();
+}
+setInterval(() => {
+  const t = S.timer; if (!t || t.user_id !== S.me) return;
+  document.querySelectorAll('.tick').forEach(el => { const s = Math.floor((Date.now() - t.start) / 1000); el.textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`; });
+  if (Date.now() - t.lastConfirm > IDLE_MS) {
+    if (confirm('Your timer has been running over 2 hours. Are you still working?')) { t.lastConfirm = Date.now(); save(); }
+    else { stopTimer(t.lastConfirm + IDLE_MS); render(); }
+  }
+}, 1000);
+
+/* ---------- templates ---------- */
+function snapshot(id) {
+  const g = goal(id);
+  return { title: g.title, description: g.description, level: g.level, children: kids(id).map(k => snapshot(k.id)) };
+}
+function instantiate(node, parent, level) {
+  const g = addGoal({ title: node.title, description: node.description, level, parent });
+  node.children.forEach(c => instantiate(c, g.id, nextLevel(level)));
+  return g;
+}
+
+/* ---------- UI helpers ---------- */
+const $ = s => document.querySelector(s);
+let dlgSubmit = null;
+function modal(title, body, onSubmit, ok = 'Save') {
+  $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = body; $('#dlgOk').textContent = ok;
+  dlgSubmit = onSubmit; $('#dlg').showModal();
+}
+$('#dlgForm').addEventListener('submit', e => {
+  const fd = Object.fromEntries(new FormData(e.target)); const fn = dlgSubmit; dlgSubmit = null;
+  if (fn) fn(fd); render();
+});
+const opts = (arr, sel, f = x => x) => arr.map(x => `<option value="${esc(f(x)[0])}"${f(x)[0] === sel ? ' selected' : ''}>${esc(f(x)[1])}</option>`).join('');
+const projOpts = sel => `<option value="">No project</option>` + opts(S.projects.filter(p => !p.archived && (p.owner_id === S.me || p.team_id === me().team_id)), sel, p => [p.id, p.name]);
+const statusPill = s => `<span class="pill ${s}">${label(s)}</span>`;
+
+/* ---------- views ---------- */
+function shell(body) {
+  const u = me(); const h = location.hash || '#/';
+  const nav = [['#/', 'My Cascade'], ['#/today', 'Today'], ...(u.role === 'admin' ? [['#/admin', 'Admin']] : []), ['#/reports', 'Reports'], ['#/projects', 'Projects'], ['#/templates', 'Templates']]
+    .map(([href, t]) => `<a href="${href}" class="${h === href || (href !== '#/' && h.startsWith(href)) ? 'on' : ''}">${t}</a>`).join('');
+  return `<div class="shell"><nav class="side"><div class="logo">Casc<span>ade</span></div>${nav}
+    <div class="who">${esc(u.name)}<br>${esc(u.email)} · ${u.role}<br><a href="#" data-a="logout" style="color:var(--lime)">Switch account</a></div></nav><main>${body}</main></div>`;
+}
+function timerBox() {
+  const t = S.timer;
+  if (t && t.user_id === S.me) {
+    const g = t.goal_id && goal(t.goal_id), p = t.project_id && project(t.project_id);
+    return `<div class="card timer"><div class="row between"><div><span class="muted small">TIMER RUNNING</span><div class="lvl-yearly tick">00:00:00</div>
+      <div class="small muted">${esc(g ? g.title : p ? p.name : 'No task')}${t.note ? ' · ' + esc(t.note) : ''}</div></div><button class="btn danger" data-a="stopTimer">Stop</button></div></div>`;
+  }
+  return `<div class="card row between"><div><span class="muted small">TIMER</span><div class="muted">Not running</div></div><div class="row"><button class="btn ghost sm" data-a="addTime">Add time manually</button><button class="btn" data-a="startTimer">Start timer</button></div></div>`;
+}
+function goalCard(g) {
+  const p = prog(g), t = kids(g.id).length;
+  return `<a class="card" href="#/goal/${g.id}" style="display:block"><div class="row between"><span class="lvl-${g.level}">${esc(g.title)}</span>${statusPill(g.status)}</div>
+    ${bar(p)}<div class="row between small muted"><span>${p}% · ${t} ${t === 1 ? 'child' : 'children'}</span><span>${esc(g.target_date || 'no date')}</span></div></a>`;
+}
+
+function viewHome() {
+  const st = stats(S.me, today());
+  const q = (sessionStorage.q || '').toLowerCase(), sf = sessionStorage.sf || '', showArch = sessionStorage.arch === '1';
+  const ys = mine().filter(g => g.level === 'yearly' && !!g.archived === showArch && (!sf || g.status === sf) && g.title.toLowerCase().includes(q));
+  return shell(`<h1>My Cascade</h1>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="card stat"><b class="live-today">${fmtMin(st.total)}</b><span>Tracked today</span></div>
+    <div class="card stat"><b>${st.tasks}</b><span>Tasks done today</span></div>
+    <div class="card stat"><b>${fmtMin(weekMinutes(S.me))}</b><span>Last 7 days</span></div>
+    <div class="card stat"><b>${streak()}</b><span>Day streak</span></div></div>
+  ${timerBox()}
+  <div class="row between" style="margin:22px 0 10px"><h2 style="margin:0">Yearly goals</h2><button class="btn" data-a="newGoal" data-level="yearly">+ Yearly goal</button></div>
+  <div class="row" style="margin-bottom:12px"><input id="q" placeholder="Search goals" value="${esc(sessionStorage.q || '')}">
+    <select id="sf"><option value="">All statuses</option>${opts(STATUSES, sf, s => [s, label(s)])}</select>
+    <label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="arch" ${showArch ? 'checked' : ''} style="width:auto"> Archived</label></div>
+  ${ys.length ? `<div class="grid g3">${ys.map(goalCard).join('')}</div>` :
+    `<div class="card"><p>No yearly goals${q || sf || showArch ? ' match' : ' yet'}.</p>${mine().length ? '' : '<button class="btn ghost sm" data-a="sample">Load sample goals</button>'}</div>`}`);
+}
+
+function viewToday() {
+  const t = today();
+  const ds = mine().filter(g => g.level === 'daily' && g.target_date && !g.archived);
+  const over = ds.filter(g => g.target_date < t && g.status !== 'done');
+  const td = ds.filter(g => g.target_date === t);
+  const item = g => `<div class="item ${g.status === 'done' ? 'done' : ''} ${g.target_date < t && g.status !== 'done' ? 'overdue' : ''}">
+    <input type="checkbox" data-a="toggle" data-id="${g.id}" ${g.status === 'done' ? 'checked' : ''}>
+    <div class="grow"><a class="t" href="#/goal/${g.id}">${esc(g.title)}</a>${g.target_date < t ? `<div class="small" style="color:var(--red)">Due ${esc(g.target_date)}</div>` : ''}</div>
+    <button class="icon" title="Log time" data-a="startTimer" data-goal="${g.id}">⏱ log</button></div>`;
+  const groups = {};
+  td.forEach(g => { (groups[g.parent_goal_id || 'none'] = groups[g.parent_goal_id || 'none'] || []).push(g); });
+  return shell(`<h1>Today</h1><p>${new Date().toDateString()}</p>
+  ${over.length ? `<h2 style="color:var(--red);margin-top:18px">Overdue</h2><div class="list">${over.map(item).join('')}</div>` : ''}
+  ${Object.keys(groups).map(k => `<h2 style="margin-top:22px">${esc(goal(k)?.title || 'No weekly goal')}</h2><div class="list">${groups[k].map(item).join('')}</div>`).join('')}
+  ${!over.length && !td.length ? `<div class="card" style="margin-top:14px"><p>No daily tasks due today. Add daily tasks with today's target date from a weekly goal.</p></div>` : ''}`);
+}
+
+function viewGoal(id) {
+  const g = goal(id);
+  if (!g || !canSee(g)) return shell('<h1>Not found</h1><p>This goal does not exist or is private.</p>');
+  const editable = canEdit(g), ro = !editable;
+  const trail = []; let c = g; while (c) { trail.unshift(c); c = goal(c.parent_goal_id); }
+  const crumbs = trail.map((x, i) => i === trail.length - 1 ? esc(x.title) : (canSee(x) ? `<a href="#/goal/${x.id}">${esc(x.title)}</a>` : esc(x.title))).join(' › ');
+  const ch = kids(id).filter(k => canSee(k)), nl = nextLevel(g.level), p = prog(g);
+  const sel = new Set(S.selected.filter(s => ch.some(k => k.id === s)));
+  const row = k => `<div class="item ${k.status === 'done' ? 'done' : ''}">
+    ${editable ? `<input type="checkbox" data-a="sel" data-id="${k.id}" ${sel.has(k.id) ? 'checked' : ''} title="Select">` : ''}
+    ${k.level === 'daily' && editable ? `<button class="icon" data-a="toggle" data-id="${k.id}">${k.status === 'done' ? '✓ done' : '○ mark done'}</button>` : ''}
+    <a class="grow lvl-${k.level}" href="#/goal/${k.id}"><span class="t">${esc(k.title)}</span>${k.level !== 'daily' ? bar(prog(k)) : ''}<div class="small muted">${esc(k.target_date || '')}</div></a>
+    ${statusPill(k.status)}</div>`;
+  const cis = S.checkins.filter(x => x.goal_id === id).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const siblings = editable ? S.goals.filter(x => x.level === g.level && x.owner_id === g.owner_id && x.id !== id) : [];
+  return shell(`<div class="crumbs"><a href="#/">My Cascade</a> › ${crumbs}</div>
+  <div class="row between"><h1 class="lvl-${g.level}" style="font-size:26px">${esc(g.title)}</h1>
+    ${editable ? `<div class="row"><button class="icon" data-a="saveTemplate" data-id="${id}" title="Save tree as template">🔖 Template</button><button class="icon" data-a="editGoal" data-id="${id}">Edit</button>
+      ${g.level === 'yearly' ? `<button class="icon" data-a="archive" data-id="${id}">${g.archived ? 'Unarchive' : 'Archive'}</button>` : ''}<button class="icon" data-a="delGoal" data-id="${id}">Delete</button></div>` : '<span class="pill">read-only</span>'}</div>
+  <p>${esc(g.description)}</p>
+  <div class="card"><div class="row between">${statusPill(g.status)}<span class="muted small">${g.level} · target ${esc(g.target_date || 'none')} ${g.override ? '· manual status' : ''}</span></div>${bar(p)}<b>${p}%</b>
+    ${editable ? `<div class="row" style="margin-top:8px"><select id="gstatus" data-id="${id}">${opts(STATUSES, g.status, s => [s, label(s)])}</select>${g.override ? `<button class="btn ghost sm" data-a="auto" data-id="${id}">Reset to auto</button>` : ''}</div>` : ''}</div>
+  ${editable ? `<div class="grid g4" style="margin:14px 0"><div class="card stat"><b>${fmtMin(goalMinutes(id))}</b><span>Time logged</span></div>${g.level === 'daily' ? `<button class="btn" data-a="startTimer" data-goal="${id}">⏱ Start timer</button>` : ''}</div>` : ''}
+  ${nl ? `<div class="row between" style="margin:22px 0 10px"><h2 style="margin:0">${nl[0].toUpperCase() + nl.slice(1)} goals</h2>${editable ? `<div class="row"><button class="btn ghost sm" data-a="selAll" data-id="${id}">Select all</button><button class="btn sm" data-a="newGoal" data-level="${nl}" data-parent="${id}">+ Add ${nl}</button></div>` : ''}</div>
+    <div class="list">${ch.map(row).join('') || '<div class="item"><span class="muted">Nothing here yet.</span></div>'}</div>
+    ${sel.size ? `<div class="bulk row"><b>${sel.size} selected</b><select id="bulkStatus"><option value="">Set status…</option>${opts(STATUSES, '', s => [s, label(s)])}</select>
+      <select id="bulkMove"><option value="">Move to…</option>${opts(siblings.filter(s => nl && s.level === g.level), '', s => [s.id, s.title])}</select>
+      <button class="btn danger sm" data-a="bulkDel">Delete</button><button class="btn ghost sm" data-a="selNone">Clear</button></div>` : ''}` : ''}
+  ${editable ? `<h2 style="margin-top:26px">Check-ins</h2><div class="card"><button class="btn sm" data-a="checkin" data-id="${id}">+ Check-in</button>
+    ${cis.map(x => `<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:8px">Confidence ${x.confidence_rating}/5 · <span class="muted small">${new Date(x.created_at).toLocaleString()}</span><p>${esc(x.note)}</p></div>`).join('')}</div>` : ''}`);
+}
+
+function viewAdmin() {
+  if (me().role !== 'admin') return shell('<h1>Admins only</h1>');
+  const t = today(), ms = teamMembers();
+  const rows = ms.map(u => ({ u, s: stats(u.id, t), w: weekMinutes(u.id) }));
+  const top = rows.slice().sort((a, b) => b.s.total - a.s.total)[0];
+  const total = rows.reduce((a, r) => a + r.s.total, 0), tasks = rows.reduce((a, r) => a + r.s.tasks, 0);
+  return shell(`<h1>Team dashboard</h1><p>Read-only. You see yearly and monthly goals only. Weekly and daily detail stays private.</p>
+  <div class="grid g4" style="margin:14px 0"><div class="card stat"><b>${fmtMin(total)}</b><span>Team time today</span></div>
+   <div class="card stat"><b>${top && top.s.total > 0 ? esc(top.u.name) : '—'}</b><span>Most active</span></div>
+   <div class="card stat"><b>${tasks}</b><span>Tasks done today</span></div><div class="card stat"><b>${ms.length}</b><span>Members</span></div></div>
+  <table><tr><th>Member</th><th>Today</th><th>7 days</th><th>Tasks today</th><th>Active yearly goals</th></tr>
+  ${rows.map(({ u, s, w }) => `<tr><td><a href="#/admin/${u.id}" style="color:var(--lime)">${esc(u.name)}</a><div class="small muted">${u.role}</div></td><td>${fmtMin(s.total)}</td><td>${fmtMin(w)}</td><td>${s.tasks}</td>
+   <td>${S.goals.filter(g => g.owner_id === u.id && g.level === 'yearly' && !g.archived && g.status !== 'done').map(g => `${esc(g.title)} <b>${prog(g)}%</b>`).join('<br>') || '<span class="muted">none</span>'}</td></tr>`).join('')}</table>`);
+}
+function viewMember(id) {
+  const u = user(id);
+  if (me().role !== 'admin' || !u || !teamMembers().includes(u)) return shell('<h1>Not allowed</h1>');
+  const ms = S.goals.filter(g => g.owner_id === id && (g.level === 'yearly' || g.level === 'monthly') && !g.archived);
+  return shell(`<div class="crumbs"><a href="#/admin">Team</a> › ${esc(u.name)}</div><h1>${esc(u.name)}: yearly &amp; monthly goals</h1>
+   ${ms.filter(g => g.level === 'yearly').map(y => `<div class="card" style="margin-bottom:14px"><div class="row between"><b class="lvl-yearly">${esc(y.title)}</b><span>${prog(y)}%</span></div>${bar(prog(y))}
+     ${kids(y.id).filter(m => m.level === 'monthly').map(m => `<div class="row between small" style="margin-top:8px"><span>${esc(m.title)}</span><span>${prog(m)}%</span></div>${bar(prog(m))}`).join('') || '<p class="small">No monthly goals.</p>'}</div>`).join('') || '<div class="card"><p>No goals yet.</p></div>'}`);
+}
+
+/* reports */
+function svgBars(data, color = '#D8FF48') {
+  if (!data.length) return '<p class="muted">No data for this range.</p>';
+  const W = 640, H = 200, m = 28, max = Math.max(...data.map(d => d.v), 1), bw = (W - m * 2) / data.length;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}"><line x1="${m}" y1="${H - 24}" x2="${W - m}" y2="${H - 24}" stroke="#39434e"/>
+   ${data.map((d, i) => { const h = (H - 50) * d.v / max, x = m + i * bw; return `<rect x="${x + 3}" y="${H - 24 - h}" width="${Math.max(bw - 6, 2)}" height="${h}" fill="${color}"><title>${esc(d.l)}: ${d.v}</title></rect>${data.length <= 16 ? `<text x="${x + bw / 2}" y="${H - 10}" text-anchor="middle">${esc(d.l.slice(-5))}</text>` : ''}`; }).join('')}
+   <text x="4" y="12">max ${Math.round(max)}</text></svg>`;
+}
+function svgLine(data, color = '#D8FF48') {
+  if (data.length < 1) return '<p class="muted">No data for this range.</p>';
+  const W = 640, H = 200, m = 28, max = Math.max(...data.map(d => d.v), 1), step = data.length > 1 ? (W - m * 2) / (data.length - 1) : 0;
+  const pts = data.map((d, i) => [m + i * step, H - 24 - (H - 50) * d.v / max, d]);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}"><line x1="${m}" y1="${H - 24}" x2="${W - m}" y2="${H - 24}" stroke="#39434e"/>
+   <polyline fill="none" stroke="${color}" stroke-width="2" points="${pts.map(p => p[0] + ',' + p[1]).join(' ')}"/>
+   ${pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${color}"><title>${esc(p[2].l)}: ${p[2].v}</title></circle>`).join('')}
+   <text x="${m}" y="${H - 8}">${esc(data[0].l)}</text><text x="${W - m}" y="${H - 8}" text-anchor="end">${esc(data[data.length - 1].l)}</text><text x="4" y="12">max ${Math.round(max)}</text></svg>`;
+}
+function reportData() {
+  const f = JSON.parse(sessionStorage.rf || '{}');
+  const from = f.from || dstr(new Date(Date.now() - 29 * 864e5)), to = f.to || today();
+  const admin = me().role === 'admin';
+  const who = admin ? (f.who || S.me) : S.me;
+  const other = who !== S.me;
+  const entries = S.entries.filter(e => (who === 'all' ? teamMembers().some(u => u.id === e.user_id) : e.user_id === who) && dayOf(e.start_time) >= from && dayOf(e.start_time) <= to && (!f.project || e.project_id === f.project));
+  let gs = S.goals.filter(g => (who === 'all' ? teamMembers().some(u => u.id === g.owner_id) : g.owner_id === who) && g.completed_at && dayOf(g.completed_at) >= from && dayOf(g.completed_at) <= to);
+  const visibleAll = S.goals.filter(g => (who === 'all' ? teamMembers().some(u => u.id === g.owner_id) : g.owner_id === who) && (!(other || who === 'all') || g.level === 'yearly' || g.level === 'monthly'));
+  return { f, from, to, who, admin, entries, done: gs, visibleAll, restricted: other || who === 'all' };
+}
+function viewReports() {
+  const r = reportData();
+  const byDay = {}; r.entries.forEach(e => { const d = dayOf(e.start_time); byDay[d] = (byDay[d] || 0) + entryMin(e); });
+  const timeData = Object.keys(byDay).sort().map(d => ({ l: d, v: Math.round(byDay[d] / 6) / 10 }));
+  const taskDay = {}; r.done.filter(g => g.level === 'daily').forEach(g => { const d = dayOf(g.completed_at); taskDay[d] = (taskDay[d] || 0) + 1; });
+  const taskData = Object.keys(taskDay).sort().map(d => ({ l: d, v: taskDay[d] }));
+  const ms = r.done.filter(g => g.level !== 'daily').sort((a, b) => a.completed_at.localeCompare(b.completed_at));
+  const cum = ms.map((g, i) => ({ l: dayOf(g.completed_at), v: i + 1 }));
+  const lvlData = LEVELS.filter(l => !r.restricted || l === 'yearly' || l === 'monthly').map(l => { const a = r.visibleAll.filter(g => g.level === l); return { l, v: a.length ? Math.round(a.reduce((x, g) => x + prog(g), 0) / a.length) : 0 }; });
+  const total = r.entries.reduce((a, e) => a + entryMin(e), 0);
+  return shell(`<h1>Reports</h1>
+  <form id="rf" class="row" style="margin-bottom:16px"><label>From<input type="date" name="from" value="${r.from}"></label><label>To<input type="date" name="to" value="${r.to}"></label>
+   <label>Project<select name="project"><option value="">All</option>${opts(S.projects, r.f.project || '', p => [p.id, p.name])}</select></label>
+   ${r.admin ? `<label>Member<select name="who">${opts(teamMembers(), r.who, u => [u.id, u.name])}<option value="all"${r.who === 'all' ? ' selected' : ''}>Whole team</option></select></label>` : ''}
+   <button class="btn sm" style="align-self:end">Apply</button></form>
+  ${r.restricted ? '<p class="small">Viewing other members: goal charts include yearly and monthly goals only.</p>' : ''}
+  <p><b>${fmtMin(total)}</b> tracked · <b>${r.done.filter(g => g.level === 'daily').length}</b> tasks done · <b>${ms.length}</b> milestones done</p>
+  <h2>Time tracked per day (hours)</h2>${svgBars(timeData)}
+  <h2 style="margin-top:20px">Tasks completed per day</h2>${svgBars(taskData, '#5be08a')}
+  <h2 style="margin-top:20px">Goal progress over time (cumulative milestones completed)</h2>${svgLine(cum)}
+  <h2 style="margin-top:20px">Average progress by level (%)</h2>${svgBars(lvlData, '#ffd166')}
+  <div class="row" style="margin-top:20px"><button class="btn ghost" data-a="csvTime">Export time CSV</button><button class="btn ghost" data-a="csvGoals">Export goals CSV</button></div>`);
+}
+function download(name, rows) {
+  const csv = rows.map(r => r.map(c => { let s = String(c ?? ''); if (/^[=+\-@]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; }).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = name; a.click();
+}
+
+function viewProjects() {
+  const list = S.projects.filter(p => p.owner_id === S.me || p.team_id === me().team_id);
+  return shell(`<div class="row between"><h1>Projects</h1><button class="btn" data-a="newProject">+ Project</button></div>
+  <div class="list">${list.map(p => `<div class="item ${p.archived ? 'done' : ''}"><span class="dot" style="background:${esc(p.color)}"></span><span class="grow t">${esc(p.name)}</span>
+   <span class="small muted">${fmtMin(S.entries.filter(e => e.project_id === p.id && e.user_id === S.me).reduce((a, e) => a + entryMin(e), 0))}</span>
+   <button class="icon" data-a="archProject" data-id="${p.id}">${p.archived ? 'Unarchive' : 'Archive'}</button></div>`).join('') || '<div class="item"><span class="muted">No projects yet.</span></div>'}</div>`);
+}
+
+function viewTemplates() {
+  const ts = S.templates.filter(t => t.owner_id === S.me);
+  const count = n => 1 + n.children.reduce((a, c) => a + count(c), 0);
+  return shell(`<h1>Templates</h1><p>Save any goal's whole tree from its detail page (🔖), then reuse it here.</p>
+  <div class="list">${ts.map(t => `<div class="item"><div class="grow"><b>${esc(t.name)}</b><div class="small muted">${t.tree.level} tree · ${count(t.tree)} goals</div></div>
+   <button class="btn sm" data-a="useTemplate" data-id="${t.id}">Use</button><button class="icon" data-a="delTemplate" data-id="${t.id}">Delete</button></div>`).join('') || '<div class="item"><span class="muted">No templates yet.</span></div>'}</div>`);
+}
+
+
+function viewLogin() {
+  return `<div class="login"><div class="logo" style="font-size:32px">Casc<span style="color:var(--lime)">ade</span></div><p>Goals and time tracking by IshiaqTech. Data stays in this browser.</p>
+  <h3 style="margin-top:20px">Sign in</h3><div class="list">${S.users.map(u => `<div class="item"><div class="grow">${esc(u.name)}<div class="small muted">${esc(u.email)} · ${u.role}</div></div><button class="btn sm" data-a="login" data-id="${u.id}">Open</button></div>`).join('')}</div>
+  <h3 style="margin-top:24px">Add a team member</h3><form id="signup"><label>Name<input name="name" required></label><label>Email<input name="email" type="email" required></label><button class="btn" style="margin-top:12px">Create account</button></form>
+  <p class="small" style="margin-top:16px">Demo storage: accounts are local to this browser and have no passwords, so this is not real access control.</p></div>`;
+}
+
+/* ---------- router ---------- */
+function render() {
+  const app = $('#app');
+  if (!me()) { app.innerHTML = viewLogin(); return; }
+  const h = (location.hash || '#/').replace(/\?.*/, ''), p = h.split('/');
+  let v;
+  if (h === '#/' || h === '#') v = viewHome();
+  else if (p[1] === 'today') v = viewToday();
+  else if (p[1] === 'goal') v = viewGoal(p[2]);
+  else if (p[1] === 'admin') v = p[2] ? viewMember(p[2]) : viewAdmin();
+  else if (p[1] === 'reports') v = viewReports();
+  else if (p[1] === 'projects') v = viewProjects();
+  else if (p[1] === 'templates') v = viewTemplates();
+  else v = viewHome();
+  app.innerHTML = v;
+  document.title = 'Cascade | IshiaqTech';
+}
+window.addEventListener('hashchange', () => { S.selected = []; render(); });
+
+/* ---------- forms ---------- */
+function goalForm(level, parent, g) {
+  return `<label>Title<input name="title" required value="${esc(g?.title)}"></label><label>Description<textarea name="description" rows="2">${esc(g?.description)}</textarea></label>
+   <label>Level<input value="${level}${parent ? ' (under ' + esc(goal(parent).title) + ')' : ''}" disabled></label><label>Target date<input type="date" name="target_date" value="${esc(g?.target_date)}"></label>`;
+}
+const timerForm = `<label>Project<select name="project_id">${projOpts('')}</select></label>
+  <label>Daily task<select name="goal_id"><option value="">None</option>${opts(mine().filter(g => g.level === 'daily' && g.status !== 'done'), '', g => [g.id, g.title])}</select></label>
+  <label>Note<input name="note"></label>`;
+
+const actions = {
+  logout() { S.me = null; save(); render(); },
+  login(el) { S.me = el.dataset.id; save(); location.hash = '#/'; render(); },
+  closeDlg() { $('#dlg').close(); },
+  toggle(el) { const g = goal(el.dataset.id); if (canEdit(g)) { changeStatus(g.id, g.status === 'done' ? 'not_started' : 'done'); render(); } },
+  startTimer(el) {
+    if (el.dataset.goal) { const g = goal(el.dataset.goal); startTimer({ goal_id: g.id }); return; }
+    modal('Start timer', timerForm, fd => startTimer(fd), 'Start');
+  },
+  stopTimer() { stopTimer(); render(); },
+  addTime() {
+    modal('Add time', `<label>Date<input type="date" name="date" value="${today()}" required></label><label>Minutes<input type="number" name="min" min="1" required></label>` + timerForm, fd => {
+      const start = new Date(fd.date + 'T09:00:00'), mins = +fd.min;
+      S.entries.push({ id: uid('e'), user_id: S.me, project_id: fd.project_id || null, goal_id: fd.goal_id || null, start_time: start.toISOString(), end_time: new Date(+start + mins * 60000).toISOString(), duration_minutes: mins, note: fd.note });
+      save();
+    });
+  },
+  newGoal(el) {
+    const level = el.dataset.level, parent = el.dataset.parent || null;
+    modal(`New ${level} goal`, goalForm(level, parent), fd => { const g = addGoal({ ...fd, level, parent }); if (!parent) location.hash = '#/goal/' + g.id; });
+  },
+  editGoal(el) { const g = goal(el.dataset.id); modal('Edit goal', goalForm(g.level, g.parent_goal_id, g), fd => { Object.assign(g, { title: fd.title, description: fd.description, target_date: fd.target_date, updated_at: now() }); save(); }); },
+  delGoal(el) { const g = goal(el.dataset.id); if (confirm(`Delete "${g.title}" and everything under it?`)) { const p = g.parent_goal_id; deleteGoal(g.id); location.hash = p ? '#/goal/' + p : '#/'; } },
+  archive(el) { const g = goal(el.dataset.id); g.archived = !g.archived; save(); render(); },
+  auto(el) { const g = goal(el.dataset.id); g.override = false; recalc(g.id); save(); render(); },
+  sel(el) { const i = S.selected.indexOf(el.dataset.id); if (i < 0) S.selected.push(el.dataset.id); else S.selected.splice(i, 1); render(); },
+  selAll(el) { S.selected = kids(el.dataset.id).map(k => k.id); render(); },
+  selNone() { S.selected = []; render(); },
+  bulkDel() { if (confirm(`Delete ${S.selected.length} goals and their children?`)) { S.selected.forEach(id => goal(id) && deleteGoal(id)); S.selected = []; render(); } },
+  checkin(el) {
+    modal('Check-in', `<label>Note<textarea name="note" rows="3" required></textarea></label><label>Confidence (1-5)<input type="number" name="r" min="1" max="5" value="3" required></label>`,
+      fd => { S.checkins.push({ id: uid('c'), goal_id: el.dataset.id, note: fd.note, confidence_rating: Math.min(5, Math.max(1, +fd.r)), created_at: now() }); save(); });
+  },
+  newProject() {
+    modal('New project', `<label>Name<input name="name" required></label><label>Color<input type="color" name="color" value="#D8FF48"></label>`,
+      fd => { S.projects.push({ id: uid('p'), name: fd.name, owner_id: S.me, team_id: me().team_id, color: fd.color, archived: false }); save(); });
+  },
+  archProject(el) { const p = project(el.dataset.id); p.archived = !p.archived; save(); render(); },
+  saveTemplate(el) {
+    const g = goal(el.dataset.id);
+    modal('Save as template', `<label>Template name<input name="name" required value="${esc(g.title)}"></label>`, fd => { S.templates.push({ id: uid('tp'), name: fd.name, owner_id: S.me, tree: snapshot(g.id) }); save(); alert('Template saved.'); });
+  },
+  useTemplate(el) {
+    const t = S.templates.find(x => x.id === el.dataset.id), lv = t.tree.level, pl = LEVELS[LEVELS.indexOf(lv) - 1];
+    const parents = pl ? mine().filter(g => g.level === pl) : [];
+    if (pl && !parents.length) { alert(`Create a ${pl} goal first. This template starts at ${lv} level.`); return; }
+    modal('Create from template', `<label>New title<input name="title" required value="${esc(t.tree.title)}"></label>` +
+      (pl ? `<label>Parent ${pl} goal<select name="parent">${opts(parents, '', g => [g.id, g.title])}</select></label>` : ''), fd => {
+      const root = instantiate({ ...t.tree, title: fd.title }, fd.parent || null, lv);
+      location.hash = '#/goal/' + root.id;
+    }, 'Create');
+  },
+  delTemplate(el) { S.templates = S.templates.filter(t => t.id !== el.dataset.id); save(); render(); },
+  sample() {
+    const y = addGoal({ title: 'Grow the business', level: 'yearly', target_date: today().slice(0, 4) + '-12-31' });
+    const m = addGoal({ title: 'Launch first product', level: 'monthly', parent: y.id, target_date: today() });
+    const w = addGoal({ title: 'Ship landing page', level: 'weekly', parent: m.id, target_date: today() });
+    ['Write copy', 'Design hero', 'Publish'].forEach(t => addGoal({ title: t, level: 'daily', parent: w.id, target_date: today() }));
+    render();
+  },
+  csvTime() {
+    const r = reportData();
+    download('cascade-time.csv', [['date', 'user', 'project', 'goal', 'minutes', 'note'], ...r.entries.map(e => [dayOf(e.start_time), user(e.user_id)?.name, project(e.project_id)?.name, (r.restricted && e.user_id !== S.me ? '' : goal(e.goal_id)?.title), e.duration_minutes, e.note])]);
+  },
+  csvGoals() {
+    const r = reportData();
+    download('cascade-goals.csv', [['level', 'title', 'owner', 'status', 'progress', 'target', 'completed'], ...r.visibleAll.map(g => [g.level, g.title, user(g.owner_id)?.name, g.status, prog(g), g.target_date, g.completed_at || ''])]);
+  }
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  if (el.tagName === 'A') e.preventDefault();
+  const f = actions[el.dataset.a]; if (f) f(el);
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'gstatus') { changeStatus(t.dataset.id, t.value); render(); }
+  else if (t.id === 'sf') { sessionStorage.sf = t.value; render(); }
+  else if (t.id === 'arch') { sessionStorage.arch = t.checked ? '1' : '0'; render(); }
+  else if (t.id === 'bulkStatus' && t.value) { S.selected.forEach(id => changeStatus(id, t.value)); render(); }
+  else if (t.id === 'bulkMove' && t.value) {
+    const dest = goal(t.value);
+    S.selected.forEach(id => { const g = goal(id), old = g.parent_goal_id; if (canEdit(g) && dest && dest.level === goal(old).level) { g.parent_goal_id = dest.id; recalc(dest.id); recalc(old); } });
+    S.selected = []; save(); render();
+  }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'q') { sessionStorage.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); }
+});
+document.addEventListener('submit', e => {
+  if (e.target.id === 'rf') { e.preventDefault(); sessionStorage.rf = JSON.stringify(Object.fromEntries(new FormData(e.target))); render(); }
+  if (e.target.id === 'signup') {
+    e.preventDefault(); const fd = Object.fromEntries(new FormData(e.target)); const email = fd.email.trim().toLowerCase();
+    let u = S.users.find(x => x.email.toLowerCase() === email);
+    if (!u) { u = { id: uid('u'), name: fd.name.trim(), email, role: 'member', team_id: 't1' }; S.users.push(u); }
+    S.me = u.id; save(); location.hash = '#/'; render();
+  }
+});
+setInterval(() => { const el = document.querySelector('.live-today'); if (el && S.timer && S.timer.user_id === S.me) el.textContent = fmtMin(stats(S.me, today()).total); }, 30000);
+render();
