@@ -1,46 +1,628 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>IshiaqTech | Data. Intelligence. Digital.</title>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IshiaqTech | Data Analytics, Power BI &amp; Web Design Agency</title>
 <meta name="description" content="IshiaqTech helps ambitious businesses understand their data, build better intelligence, and create digital experiences that move them forward. Data analytics, business intelligence, Power BI, data visualization, website and UI/UX design.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23090B0F'/%3E%3Ctext x='50' y='68' font-size='60' font-family='Arial,sans-serif' font-weight='900' fill='%23D8FF48' text-anchor='middle'%3EI%3C/text%3E%3C/svg%3E">
-<style>
-:root{--bg:#090B0F;--panel:#121820;--lime:#D8FF48;--text:#F4F7FA;--muted:#A7B0BC;--line:#28313C}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;line-height:1.6}.container{width:min(1180px,calc(100% - 40px));margin:auto}a{text-decoration:none;color:inherit}.nav{position:sticky;top:0;background:#090B0Fee;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:9}.navin{height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px}.logo{font-size:24px;font-weight:900}.logo span,.eyebrow,.num{color:var(--lime)}.links{display:flex;gap:22px;color:var(--muted)}.btn{display:inline-block;background:var(--lime);color:#090B0F;padding:14px 22px;font-weight:800;border:0;cursor:pointer}.outline{background:transparent;color:white;border:1px solid var(--line)}.menu{display:none;background:none;color:white;border:1px solid var(--line);padding:8px}.hero,.section{padding:95px 0;border-bottom:1px solid var(--line)}.heroGrid,.aboutGrid,.contactGrid{display:grid;grid-template-columns:1.1fr .9fr;gap:55px;align-items:center}.eyebrow{font-size:12px;letter-spacing:2px;font-weight:bold;text-transform:uppercase}h1{font-size:clamp(58px,8vw,108px);line-height:.9;letter-spacing:-5px;margin:20px 0}h2{font-size:clamp(40px,5vw,68px);line-height:1;letter-spacing:-3px}.lead,p{color:var(--muted)}.visual{height:430px;border:1px solid var(--line);padding:28px;background:linear-gradient(145deg,#151c24,#0c1015)}.chart{height:330px;margin-top:30px;border-left:1px solid #39434e;border-bottom:1px solid #39434e;background:repeating-linear-gradient(0deg,transparent 0 60px,#202933 61px),repeating-linear-gradient(90deg,transparent 0 70px,#202933 71px);position:relative}.chart:after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,transparent 10%,transparent 30%,#D8FF48 30.5%,#D8FF48 31%,transparent 31.5%,transparent 45%,#D8FF48 45.5%,#D8FF48 46%,transparent 46.5%,transparent 60%,#D8FF48 60.5%,#D8FF48 61%,transparent 61.5%)}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}.card,.project{background:var(--panel);border:1px solid var(--line);padding:28px}.card h3{font-size:24px;margin-top:30px}.work{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:35px}.project{min-height:270px}.tag{color:var(--lime);font-size:11px;font-weight:bold;letter-spacing:2px}.process{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-top:35px}.step{border-top:2px solid var(--lime);padding-top:20px}.founder{min-height:460px;background:#151b22;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted)}.faqItem{border-bottom:1px solid var(--line)}.faqQ{width:100%;padding:20px 0;background:none;color:white;border:0;text-align:left;font-size:19px;font-weight:bold;cursor:pointer}.faqA{display:none;padding-bottom:20px}.faqItem.active .faqA{display:block}.form{display:grid;gap:14px}input,textarea,select{background:#0e141a;border:1px solid var(--line);color:white;padding:16px;width:100%}textarea{min-height:150px}.success{display:none;color:var(--lime);font-weight:bold}.cta{text-align:center;padding:100px 0;background:radial-gradient(circle,rgba(216,255,72,.12),transparent 40%)}.footer{padding:50px 0}.socials{display:flex;gap:20px;color:var(--muted)}
-@media(max-width:800px){.links{display:none}.links.open{display:flex;position:absolute;top:76px;left:0;right:0;background:#090B0F;padding:20px;flex-direction:column}.menu{display:block}.navin>.btn{display:none}.heroGrid,.aboutGrid,.contactGrid{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}.process{grid-template-columns:1fr 1fr}.work{grid-template-columns:1fr}}
-@media(max-width:520px){.grid3,.process{grid-template-columns:1fr}.container{width:calc(100% - 28px)}}
-</style></head><body>
-<header class="nav"><div class="container navin"><a class="logo" href="#home">ISHIAQ<span>TECH</span></a><nav class="links" id="links"><a href="#services">Services</a><a href="#work">Work</a><a href="#process">Process</a><a href="#about">About</a><a href="#contact">Contact</a></nav><a class="btn" href="#contact">Start a Project</a><button class="menu" id="menu">☰</button></div></header>
-<main>
-<section class="hero" id="home"><div class="container heroGrid"><div><div class="eyebrow">Data. Intelligence. Digital.</div><h1>Turn complexity into clarity.</h1><p class="lead">IshiaqTech helps ambitious businesses understand their data, build better intelligence, and create digital experiences that move them forward.</p><p><a class="btn" href="#contact">Start a Project →</a> <a class="btn outline" href="#services">Explore Services</a></p></div><div class="visual"><div class="eyebrow">INTELLIGENCE / 01</div><div class="chart"></div></div></div></section>
-<section class="section" id="services"><div class="container"><div class="eyebrow">What we do</div><h2>Data and digital, working together.</h2><p class="lead">From analytics and business intelligence to websites and product experiences, IshiaqTech connects insight with execution.</p><div class="grid3">
-<div class="card"><b class="num">01</b><h3>Data Analytics</h3><p>Transform raw information into clear, useful insights for smarter decisions.</p></div><div class="card"><b class="num">02</b><h3>Business Intelligence</h3><p>Build reporting systems and intelligence layers that help teams see what matters.</p></div><div class="card"><b class="num">03</b><h3>Power BI</h3><p>Create practical dashboards and reporting experiences for business performance.</p></div><div class="card"><b class="num">04</b><h3>Data Visualization</h3><p>Make complex information understandable through visual storytelling.</p></div><div class="card"><b class="num">05</b><h3>Website Design</h3><p>Design high-performing digital experiences that communicate value clearly.</p></div><div class="card"><b class="num">06</b><h3>UI/UX Design</h3><p>Create intuitive interfaces shaped around users, goals and conversion.</p></div></div></div></section>
-<section class="section" id="work"><div class="container"><div class="eyebrow">Selected Work</div><h2>Work built around outcomes.</h2><div class="work"><div class="project"><div class="tag">DATA / BI</div><h3>Executive Intelligence Dashboard</h3><p>A clearer way for leadership teams to understand performance and priorities.</p></div><div class="project"><div class="tag">DIGITAL EXPERIENCE</div><h3>Growth-Focused Business Website</h3><p>A premium digital presence designed to explain value and generate enquiries.</p></div></div></div></section>
-<section class="section" id="process"><div class="container"><div class="eyebrow">How we work</div><h2>A clear process from problem to progress.</h2><div class="process"><div class="step"><b class="num">01</b><h3>Discover</h3><p>Understand the business, audience and challenge.</p></div><div class="step"><b class="num">02</b><h3>Define</h3><p>Turn findings into a focused direction.</p></div><div class="step"><b class="num">03</b><h3>Design</h3><p>Create intelligence systems and experiences.</p></div><div class="step"><b class="num">04</b><h3>Deliver</h3><p>Launch, refine and prepare for growth.</p></div></div></div></section>
-<section class="section" id="about"><div class="container aboutGrid"><div class="founder"><div>FOUNDER PHOTOGRAPH<br><strong style="color:#D8FF48">Meet Ishiaq</strong><br><small>Replace this placeholder with your founder image.</small></div></div><div><div class="eyebrow">Meet Ishiaq</div><h2>Built around clarity, intelligence and better digital experiences.</h2><p>Ishiaq founded IshiaqTech around a simple idea: businesses should be able to understand their data and present their value clearly online.</p></div></div></section>
-<section class="section"><div class="container"><div class="eyebrow">FAQ</div><h2>Questions, answered.</h2><div class="faqItem"><button class="faqQ">What does IshiaqTech do? +</button><div class="faqA"><p>We combine data analytics, business intelligence and digital experience design.</p></div></div><div class="faqItem"><button class="faqQ">Do you work with small businesses? +</button><div class="faqA"><p>We work with businesses and teams where data and digital growth can create meaningful value.</p></div></div><div class="faqItem"><button class="faqQ">How do we start a project? +</button><div class="faqA"><p>Send your project details through the contact form below.</p></div></div></div></section>
-<section class="section" id="contact"><div class="container contactGrid"><div><div class="eyebrow">Start a Project</div><h2>Let's build something clearer.</h2><p>Email: Ishiaqtechagency.io@gmail.com</p><p>Phone: +234 903 977 4992</p></div><form class="form" id="form" action="https://formspree.io/f/xbgjenge" method="POST"><input required name="name" placeholder="Your Name"><input required type="email" name="email" placeholder="Email Address"><select name="service"><option>Choose a Service</option><option>Data Analytics</option><option>Business Intelligence</option><option>Power BI</option><option>Data Visualization</option><option>Website Design</option><option>UI/UX Design</option></select><textarea required name="message" placeholder="Tell us about your project"></textarea><button class="btn" type="submit">Send Project Enquiry →</button><div class="success" id="success">Thank you! Your enquiry has been received.</div></form></div></section>
-<section class="cta"><div class="container"><div class="eyebrow">Data. Intelligence. Digital.</div><h2>Ready to turn ideas into progress?</h2><a class="btn" href="#contact">Start a Project →</a></div></section>
+<meta name="keywords" content="data analytics, business intelligence, Power BI consultant, data visualization, website design, UI/UX design, dashboards, Nigeria">
+<meta name="author" content="IshiaqTech">
+<meta name="theme-color" content="#090B0F">
+<meta name="robots" content="index, follow">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="IshiaqTech">
+<meta property="og:title" content="IshiaqTech — Turn complexity into clarity">
+<meta property="og:description" content="Data analytics, business intelligence, Power BI dashboards, and high-performing websites for ambitious businesses.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IshiaqTech — Turn complexity into clarity">
+<meta name="twitter:description" content="Data analytics, business intelligence, Power BI dashboards, and high-performing websites.">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23090B0F'/%3E%3Ctext x='50' y='70' font-size='62' font-family='Arial,sans-serif' font-weight='900' fill='%23D8FF48' text-anchor='middle'%3EI%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "IshiaqTech",
+  "slogan": "Data. Intelligence. Digital.",
+  "description": "Data analytics, business intelligence, Power BI, data visualization, website design and UI/UX design.",
+  "email": "Ishiaqtechagency.io@gmail.com",
+  "telephone": "+2349039774992",
+  "areaServed": "Worldwide",
+  "sameAs": [
+    "https://www.linkedin.com/in/ishiaqtech/",
+    "https://www.facebook.com/Ishiaqtech",
+    "https://www.instagram.com/alao_ish/"
+  ],
+  "founder": { "@type": "Person", "name": "Ishiaq" },
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Services",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Data Analytics" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Business Intelligence" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Power BI Dashboards" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Data Visualization" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Website Design" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "UI/UX Design" } }
+    ]
+  }
+}
+</script>
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a class="logo" href="#home" aria-label="IshiaqTech home">ISHIAQ<span>TECH</span></a>
+    <nav aria-label="Primary">
+      <div class="nav-links" id="navLinks">
+        <a href="#services">Services</a>
+        <a href="#demo">Live Demo</a>
+        <a href="#work">Work</a>
+        <a href="#process">Process</a>
+        <a href="#about">About</a>
+        <a href="#faq">FAQ</a>
+      </div>
+    </nav>
+    <a class="btn btn-sm nav-cta" href="#contact">Start a Project <span class="arrow">→</span></a>
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks"><span></span></button>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="home">
+  <div class="hero-grid-bg" aria-hidden="true"></div>
+  <div class="container hero-grid">
+    <div class="reveal">
+      <span class="badge"><span class="dot"></span>Now taking new projects</span>
+      <h1>Turn complexity into <span class="rotator" aria-live="polite"><span id="rotWord">clarity</span><span class="caret" aria-hidden="true"></span></span></h1>
+      <p class="lead">IshiaqTech helps ambitious businesses understand their data, build better intelligence, and create digital experiences that move them forward.</p>
+      <div class="hero-ctas">
+        <a class="btn" href="#contact">Start a Project <span class="arrow">→</span></a>
+        <a class="btn btn-outline" href="#demo">Try the live demo</a>
+      </div>
+      <div class="hero-meta">
+        <div><strong>Data + Digital</strong>under one roof</div>
+        <div><strong>Power BI</strong>dashboard specialists</div>
+        <div><strong>End-to-end</strong>from insight to launch</div>
+      </div>
+    </div>
+
+    <div class="reveal" style="position:relative">
+      <div class="dash" aria-label="Illustrative analytics dashboard" role="img">
+        <div class="dash-top">
+          <div class="dash-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span class="dash-label">Intelligence / 01</span>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><small>Revenue</small><b data-count="248" data-prefix="$" data-suffix="k">$0k</b><span class="up">▲12%</span></div>
+          <div class="kpi"><small>Conversion</small><b data-count="4.8" data-suffix="%" data-decimals="1">0%</b><span class="up">▲0.6</span></div>
+          <div class="kpi"><small>Retention</small><b data-count="91" data-suffix="%">0%</b><span class="up">▲3%</span></div>
+        </div>
+        <div class="dash-chart">
+          <svg viewBox="0 0 400 190" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="areaGrad" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#D8FF48" stop-opacity=".35"/>
+                <stop offset="1" stop-color="#D8FF48" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <g class="dash-grid"><line x1="0" x2="400" y1="47" y2="47"/><line x1="0" x2="400" y1="95" y2="95"/><line x1="0" x2="400" y1="143" y2="143"/></g>
+            <path class="dash-area" id="heroArea" d=""/>
+            <path class="dash-line" id="heroLine" d=""/>
+          </svg>
+        </div>
+        <div class="dash-bars" id="heroBars" aria-hidden="true"></div>
+        <div class="dash-note">Illustrative data</div>
+      </div>
+      <div class="float-card" aria-hidden="true">
+        <div class="ico">↗</div>
+        <div><small>Insight generated</small><b>Q3 growth driven by repeat buyers</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TOOLS MARQUEE ================= -->
+<div class="marquee" aria-label="Tools we work with">
+  <div class="marquee-track">
+    <span>Power BI</span><span>SQL</span><span>Python</span><span>Excel</span><span>DAX</span><span>Power Query</span><span>Figma</span><span>HTML &amp; CSS</span><span>JavaScript</span><span>Google Analytics</span>
+    <span aria-hidden="true">Power BI</span><span aria-hidden="true">SQL</span><span aria-hidden="true">Python</span><span aria-hidden="true">Excel</span><span aria-hidden="true">DAX</span><span aria-hidden="true">Power Query</span><span aria-hidden="true">Figma</span><span aria-hidden="true">HTML &amp; CSS</span><span aria-hidden="true">JavaScript</span><span aria-hidden="true">Google Analytics</span>
+  </div>
+</div>
+
+<!-- ================= SERVICES ================= -->
+<section class="section" id="services">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">What we do</span>
+      <h2>Data and digital, <span class="accent">working together.</span></h2>
+      <p class="lead">From analytics and business intelligence to websites and product experiences, IshiaqTech connects insight with execution.</p>
+    </div>
+    <div class="services">
+      <article class="service reveal">
+        <span class="num">01</span>
+        <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+        <h3>Data Analytics</h3>
+        <p>Transform raw information into clear, useful insights for smarter decisions.</p>
+        <ul><li>Data cleaning</li><li>Trend analysis</li><li>Forecasting</li></ul>
+      </article>
+      <article class="service reveal">
+        <span class="num">02</span>
+        <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 6"/></svg></div>
+        <h3>Business Intelligence</h3>
+        <p>Build reporting systems and intelligence layers that help teams see what matters.</p>
+        <ul><li>KPI frameworks</li><li>Data models</li><li>Automated reports</li></ul>
+      </article>
+      <article class="service reveal">
+        <span class="num">03</span>
+        <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="12" width="4" height="8"/><rect x="10" y="7" width="4" height="13"/><rect x="16" y="3" width="4" height="17"/></svg></div>
+        <h3>Power BI</h3>
+        <p>Create practical dashboards and reporting experiences for business performance.</p>
+        <ul><li>DAX measures</li><li>Power Query</li><li>Row-level security</li></ul>
+      </article>
+      <article class="service reveal">
+        <span class="num">04</span>
+        <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-9-9v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg></div>
+        <h3>Data Visualization</h3>
+        <p>Make complex information understandable through visual storytelling.</p>
+        <ul><li>Infographics</li><li>Chart design</li><li>Data stories</li></ul>
+      </article>
+      <article class="service reveal">
+        <span class="num">05</span>
+        <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></svg></div>
+        <h3>Website Design</h3>
+        <p>Design high-performing digital experiences that communicate value clearly.</p>
+        <ul><li>Landing pages</li><li>SEO-ready</li><li>Fast &amp; responsive</li></ul>
+      </article>
+      <article class="service reveal">
+        <span class="num">06</span>
+        <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg></div>
+        <h3>UI/UX Design</h3>
+        <p>Create intuitive interfaces shaped around users, goals and conversion.</p>
+        <ul><li>User research</li><li>Wireframes</li><li>Prototypes</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= INTERACTIVE DEMO ================= -->
+<section class="section demo" id="demo">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Live demo</span>
+      <h2>Don't just read about it. <span class="accent">Explore it.</span></h2>
+      <p class="lead">This is the kind of interactive reporting we build. Switch the metric, region and period and watch the dashboard update — then imagine it running on your own data.</p>
+    </div>
+
+    <div class="demo-shell reveal">
+      <aside class="demo-side">
+        <fieldset>
+          <legend>Metric</legend>
+          <div class="seg" data-group="metric">
+            <button type="button" data-value="revenue" aria-pressed="true">Revenue</button>
+            <button type="button" data-value="orders" aria-pressed="false">Orders</button>
+            <button type="button" data-value="customers" aria-pressed="false">New customers</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Region</legend>
+          <div class="seg" data-group="region">
+            <button type="button" data-value="all" aria-pressed="true">All regions</button>
+            <button type="button" data-value="africa" aria-pressed="false">Africa</button>
+            <button type="button" data-value="europe" aria-pressed="false">Europe</button>
+            <button type="button" data-value="americas" aria-pressed="false">Americas</button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Period</legend>
+          <div class="seg row" data-group="period">
+            <button type="button" data-value="6" aria-pressed="false">6M</button>
+            <button type="button" data-value="12" aria-pressed="true">12M</button>
+          </div>
+        </fieldset>
+      </aside>
+
+      <div class="demo-main">
+        <div class="demo-kpis" aria-live="polite">
+          <div class="kpi"><small id="kTotalLabel">Total revenue</small><b id="kTotal">—</b></div>
+          <div class="kpi"><small>Monthly average</small><b id="kAvg">—</b></div>
+          <div class="kpi"><small>Best month</small><b id="kBest">—</b></div>
+          <div class="kpi"><small>vs. target</small><b id="kTarget">—</b></div>
+        </div>
+        <div class="demo-chart">
+          <div class="demo-chart-head">
+            <h3 id="chartTitle">Revenue by month</h3>
+            <div class="legend"><span><i style="background:#D8FF48"></i>Actual</span><span><i style="background:#48D8FF"></i>Target</span></div>
+          </div>
+          <svg id="demoSvg" role="img" aria-labelledby="chartTitle"></svg>
+          <div class="tooltip" id="tooltip" role="status"></div>
+        </div>
+        <div class="insight">
+          <div class="ico" aria-hidden="true">✦</div>
+          <p id="insightText">Loading insight…</p>
+        </div>
+        <p class="demo-disclaimer">Sample data generated for demonstration purposes only.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WORK ================= -->
+<section class="section" id="work">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Selected work</span>
+      <h2>Work built around <span class="accent">outcomes.</span></h2>
+      <p class="lead">Every engagement starts with a business question and ends with something people actually use.</p>
+    </div>
+
+    <div class="work-filters reveal" role="group" aria-label="Filter projects">
+      <button class="chip" type="button" data-filter="all" aria-pressed="true">All</button>
+      <button class="chip" type="button" data-filter="data" aria-pressed="false">Data &amp; BI</button>
+      <button class="chip" type="button" data-filter="digital" aria-pressed="false">Digital</button>
+    </div>
+
+    <div class="work-grid">
+      <article class="case reveal" data-cat="data">
+        <div class="case-visual" aria-hidden="true">
+          <svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice">
+            <rect x="24" y="24" width="112" height="60" rx="8" fill="#121820" stroke="#28313C"/>
+            <rect x="144" y="24" width="112" height="60" rx="8" fill="#121820" stroke="#28313C"/>
+            <rect x="264" y="24" width="112" height="60" rx="8" fill="#D8FF48" fill-opacity=".12" stroke="#D8FF48" stroke-opacity=".5"/>
+            <rect x="40" y="44" width="50" height="8" rx="4" fill="#3b4654"/><rect x="40" y="60" width="70" height="10" rx="5" fill="#F4F7FA"/>
+            <rect x="160" y="44" width="50" height="8" rx="4" fill="#3b4654"/><rect x="160" y="60" width="60" height="10" rx="5" fill="#F4F7FA"/>
+            <rect x="280" y="44" width="50" height="8" rx="4" fill="#D8FF48" fill-opacity=".6"/><rect x="280" y="60" width="74" height="10" rx="5" fill="#D8FF48"/>
+            <rect x="24" y="96" width="232" height="104" rx="8" fill="#121820" stroke="#28313C"/>
+            <path d="M40 180 L80 160 L120 168 L160 130 L200 138 L240 112" fill="none" stroke="#D8FF48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="264" y="96" width="112" height="104" rx="8" fill="#121820" stroke="#28313C"/>
+            <circle cx="320" cy="148" r="32" fill="none" stroke="#28313C" stroke-width="12"/>
+            <circle cx="320" cy="148" r="32" fill="none" stroke="#D8FF48" stroke-width="12" stroke-dasharray="140 201" transform="rotate(-90 320 148)"/>
+          </svg>
+        </div>
+        <div class="case-body">
+          <span class="tag">Data / BI</span>
+          <h3>Executive Intelligence Dashboard</h3>
+          <p>A clearer way for leadership teams to understand performance and priorities.</p>
+          <dl>
+            <dt>Challenge</dt><dd>Reporting scattered across spreadsheets and inboxes.</dd>
+            <dt>Approach</dt><dd>One data model, one source of truth, one Power BI dashboard.</dd>
+            <dt>Result</dt><dd>Leadership sees the numbers that matter in minutes, not days.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="case reveal" data-cat="digital">
+        <div class="case-visual" aria-hidden="true">
+          <svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice">
+            <rect x="40" y="24" width="320" height="196" rx="10" fill="#121820" stroke="#28313C"/>
+            <rect x="40" y="24" width="320" height="26" rx="10" fill="#161e28"/>
+            <circle cx="56" cy="37" r="4" fill="#3b4654"/><circle cx="70" cy="37" r="4" fill="#3b4654"/><circle cx="84" cy="37" r="4" fill="#3b4654"/>
+            <rect x="64" y="72" width="170" height="18" rx="4" fill="#F4F7FA"/>
+            <rect x="64" y="98" width="130" height="18" rx="4" fill="#D8FF48"/>
+            <rect x="64" y="128" width="150" height="7" rx="3.5" fill="#3b4654"/>
+            <rect x="64" y="142" width="120" height="7" rx="3.5" fill="#3b4654"/>
+            <rect x="64" y="164" width="84" height="26" rx="13" fill="#D8FF48"/>
+            <rect x="256" y="72" width="82" height="118" rx="8" fill="#D8FF48" fill-opacity=".1" stroke="#D8FF48" stroke-opacity=".4"/>
+            <path d="M268 170 L288 150 L304 160 L326 128" fill="none" stroke="#D8FF48" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="case-body">
+          <span class="tag">Digital experience</span>
+          <h3>Growth-Focused Business Website</h3>
+          <p>A premium digital presence designed to explain value and generate enquiries.</p>
+          <dl>
+            <dt>Challenge</dt><dd>A great service hidden behind an unclear website.</dd>
+            <dt>Approach</dt><dd>Sharper messaging, conversion-led layout, fast mobile build.</dd>
+            <dt>Result</dt><dd>A site that explains the offer in seconds and makes enquiring easy.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="case reveal" data-cat="data">
+        <div class="case-visual" aria-hidden="true">
+          <svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice">
+            <g fill="#28313C">
+              <rect x="40" y="150" width="28" height="50" rx="3"/><rect x="78" y="120" width="28" height="80" rx="3"/>
+              <rect x="116" y="135" width="28" height="65" rx="3"/><rect x="154" y="95" width="28" height="105" rx="3"/>
+              <rect x="192" y="110" width="28" height="90" rx="3"/><rect x="230" y="70" width="28" height="130" rx="3"/>
+            </g>
+            <rect x="268" y="45" width="28" height="155" rx="3" fill="#D8FF48"/>
+            <rect x="306" y="60" width="28" height="140" rx="3" fill="#D8FF48" fill-opacity=".35" stroke="#D8FF48" stroke-dasharray="4 4"/>
+            <line x1="30" x2="360" y1="200" y2="200" stroke="#3b4654"/>
+            <text x="306" y="48" fill="#A7B0BC" font-size="11" font-family="Arial">forecast</text>
+          </svg>
+        </div>
+        <div class="case-body">
+          <span class="tag">Analytics</span>
+          <h3>Sales Performance &amp; Forecasting</h3>
+          <p>Turning historic sales data into a forward-looking planning tool.</p>
+          <dl>
+            <dt>Challenge</dt><dd>Planning based on gut feel instead of evidence.</dd>
+            <dt>Approach</dt><dd>Cleaned history, seasonality analysis and a simple forecast model.</dd>
+            <dt>Result</dt><dd>Stock and staffing decisions grounded in real demand patterns.</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="case reveal" data-cat="digital">
+        <div class="case-visual" aria-hidden="true">
+          <svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice">
+            <rect x="60" y="30" width="110" height="180" rx="16" fill="#121820" stroke="#28313C"/>
+            <rect x="74" y="54" width="82" height="50" rx="8" fill="#D8FF48" fill-opacity=".15"/>
+            <rect x="74" y="114" width="60" height="8" rx="4" fill="#F4F7FA"/><rect x="74" y="130" width="82" height="6" rx="3" fill="#3b4654"/>
+            <rect x="74" y="170" width="82" height="22" rx="11" fill="#D8FF48"/>
+            <path d="M180 120 H220" stroke="#3b4654" stroke-dasharray="4 4"/>
+            <rect x="230" y="30" width="110" height="180" rx="16" fill="#121820" stroke="#D8FF48" stroke-opacity=".5"/>
+            <rect x="244" y="54" width="82" height="8" rx="4" fill="#F4F7FA"/>
+            <rect x="244" y="72" width="82" height="26" rx="6" fill="#161e28" stroke="#28313C"/>
+            <rect x="244" y="106" width="82" height="26" rx="6" fill="#161e28" stroke="#28313C"/>
+            <rect x="244" y="140" width="82" height="26" rx="6" fill="#161e28" stroke="#D8FF48"/>
+            <rect x="244" y="176" width="82" height="20" rx="10" fill="#D8FF48"/>
+          </svg>
+        </div>
+        <div class="case-body">
+          <span class="tag">UI / UX</span>
+          <h3>Onboarding Flow Redesign</h3>
+          <p>A simpler first-run experience that gets new users to value faster.</p>
+          <dl>
+            <dt>Challenge</dt><dd>Users dropping off before finishing sign-up.</dd>
+            <dt>Approach</dt><dd>Journey mapping, fewer steps, clear progress and tested prototypes.</dd>
+            <dt>Result</dt><dd>A flow users can complete without needing help.</dd>
+          </dl>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROCESS ================= -->
+<section class="section" id="process">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">How we work</span>
+      <h2>A clear process from <span class="accent">problem to progress.</span></h2>
+    </div>
+    <div class="process">
+      <div class="step reveal"><span class="num">01</span><h3>Discover</h3><p>Understand the business, audience, data sources and the real challenge.</p><small>Workshops · Audit</small></div>
+      <div class="step reveal"><span class="num">02</span><h3>Define</h3><p>Turn findings into a focused direction with clear goals and KPIs.</p><small>Scope · Roadmap</small></div>
+      <div class="step reveal"><span class="num">03</span><h3>Design</h3><p>Create intelligence systems and experiences, reviewed with you at every step.</p><small>Prototypes · Models</small></div>
+      <div class="step reveal"><span class="num">04</span><h3>Deliver</h3><p>Launch, train your team, refine and prepare for growth.</p><small>Launch · Support</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PACKAGES ================= -->
+<section class="section" id="packages">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">Ways to work together</span>
+      <h2>Pick the engagement <span class="accent">that fits.</span></h2>
+      <p class="lead">Every project is scoped to your needs. Tell us what you're working on and we'll send a tailored proposal.</p>
+    </div>
+    <div class="packages">
+      <div class="pkg reveal">
+        <h3>Launch</h3>
+        <p class="for">For businesses that need a sharp starting point.</p>
+        <ul>
+          <li>Single dashboard or landing page</li>
+          <li>Discovery session</li>
+          <li>Mobile-ready delivery</li>
+          <li>Handover walkthrough</li>
+        </ul>
+        <a class="btn btn-outline" href="#contact" data-package="Launch">Get a quote</a>
+      </div>
+      <div class="pkg featured reveal">
+        <span class="ribbon">Most popular</span>
+        <h3>Growth</h3>
+        <p class="for">For teams ready to run on data and a stronger digital presence.</p>
+        <ul>
+          <li>Multi-page website or BI suite</li>
+          <li>Data model &amp; KPI framework</li>
+          <li>UX design &amp; prototyping</li>
+          <li>Team training session</li>
+          <li>30 days post-launch support</li>
+        </ul>
+        <a class="btn" href="#contact" data-package="Growth">Get a quote <span class="arrow">→</span></a>
+      </div>
+      <div class="pkg reveal">
+        <h3>Partner</h3>
+        <p class="for">For ongoing analytics and digital support.</p>
+        <ul>
+          <li>Monthly reporting &amp; insights</li>
+          <li>Continuous improvements</li>
+          <li>Priority turnaround</li>
+          <li>Quarterly strategy review</li>
+        </ul>
+        <a class="btn btn-outline" href="#contact" data-package="Partner">Get a quote</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ABOUT ================= -->
+<section class="section" id="about">
+  <div class="container about-grid">
+    <div class="founder reveal">
+      <!-- To use a real photo: add assets/img/founder.jpg and replace the span below with
+           <img src="assets/img/founder.jpg" alt="Ishiaq, founder of IshiaqTech"> -->
+      <span class="founder-mono" aria-hidden="true">IT</span>
+      <div class="founder-cap"><b>Ishiaq</b><small>Founder, IshiaqTech</small></div>
+    </div>
+    <div class="reveal">
+      <span class="eyebrow">Meet Ishiaq</span>
+      <h2 style="margin:16px 0 20px">Built around clarity, intelligence and <span class="accent">better digital experiences.</span></h2>
+      <p class="lead">Ishiaq founded IshiaqTech around a simple idea: businesses should be able to understand their data and present their value clearly online.</p>
+      <p>Most companies have the information they need to grow — it's just locked in spreadsheets, disconnected tools and websites that don't tell their story. IshiaqTech bridges that gap, combining analytical rigour with design craft so insight turns into action.</p>
+      <div class="values">
+        <div class="value"><b>Clarity</b><p>Simple beats clever. Every chart and page has a job.</p></div>
+        <div class="value"><b>Intelligence</b><p>Decisions backed by evidence, not guesswork.</p></div>
+        <div class="value"><b>Craft</b><p>Details matter — in the data and the design.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section" id="faq">
+  <div class="container faq-grid">
+    <div class="reveal">
+      <span class="eyebrow">FAQ</span>
+      <h2 style="margin-top:16px">Questions, <span class="accent">answered.</span></h2>
+      <p class="lead" style="margin-top:18px">Can't find what you need? <a href="#contact" class="accent">Send us a message</a>.</p>
+    </div>
+    <div class="faq reveal">
+      <details open>
+        <summary>What does IshiaqTech do?</summary>
+        <p>We combine data analytics, business intelligence and digital experience design — so you can understand your business better and present it better online.</p>
+      </details>
+      <details>
+        <summary>Do you work with small businesses?</summary>
+        <p>Yes. We work with businesses and teams of all sizes where data and digital growth can create meaningful value.</p>
+      </details>
+      <details>
+        <summary>Can you work with our existing data and tools?</summary>
+        <p>Usually, yes. We regularly work with Excel, Google Sheets, SQL databases and common business platforms, connecting them into Power BI or custom reports.</p>
+      </details>
+      <details>
+        <summary>How long does a project take?</summary>
+        <p>It depends on scope. A focused dashboard or landing page is typically a matter of weeks; larger BI or website projects are planned in phases with clear milestones.</p>
+      </details>
+      <details>
+        <summary>Do you work with clients outside Nigeria?</summary>
+        <p>Absolutely. We work remotely with clients anywhere, using video calls and shared workspaces to keep collaboration smooth.</p>
+      </details>
+      <details>
+        <summary>How do we start a project?</summary>
+        <p>Send your project details through the contact form below. We'll reply to arrange a short discovery call and follow up with a tailored proposal.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section class="section" id="contact">
+  <div class="container contact-grid">
+    <div class="reveal">
+      <span class="eyebrow">Start a project</span>
+      <h2 style="margin:16px 0 20px">Let's build something <span class="accent">clearer.</span></h2>
+      <p class="lead">Tell us a little about your project. We'll get back to you to talk through the next steps.</p>
+      <ul class="contact-list">
+        <li><a href="mailto:Ishiaqtechagency.io@gmail.com"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span><small>Email</small>Ishiaqtechagency.io@gmail.com</span></a></li>
+        <li><a href="tel:+2349039774992"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span><span><small>Phone</small>+234 903 977 4992</span></a></li>
+        <li><a href="https://wa.me/2349039774992" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg></span><span><small>WhatsApp</small>Chat with us directly</span></a></li>
+      </ul>
+    </div>
+
+    <form class="form reveal" id="contactForm" action="https://formspree.io/f/xbgjenge" method="POST" novalidate>
+      <div class="form-row">
+        <div class="field">
+          <label for="fName">Your name</label>
+          <input id="fName" name="name" autocomplete="name" required>
+          <span class="error" aria-live="polite"></span>
+        </div>
+        <div class="field">
+          <label for="fEmail">Email address</label>
+          <input id="fEmail" type="email" name="email" autocomplete="email" required>
+          <span class="error" aria-live="polite"></span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="fCompany">Company <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+          <input id="fCompany" name="company" autocomplete="organization">
+        </div>
+        <div class="field">
+          <label for="fPackage">Engagement</label>
+          <select id="fPackage" name="package">
+            <option value="Not sure yet">Not sure yet</option>
+            <option>Launch</option>
+            <option>Growth</option>
+            <option>Partner</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <span class="label" id="servicesLabel">What do you need help with?</span>
+        <div class="chips" role="group" aria-labelledby="servicesLabel">
+          <input type="checkbox" id="s1" name="services" value="Data Analytics"><label for="s1">Data Analytics</label>
+          <input type="checkbox" id="s2" name="services" value="Business Intelligence"><label for="s2">Business Intelligence</label>
+          <input type="checkbox" id="s3" name="services" value="Power BI"><label for="s3">Power BI</label>
+          <input type="checkbox" id="s4" name="services" value="Data Visualization"><label for="s4">Data Visualization</label>
+          <input type="checkbox" id="s5" name="services" value="Website Design"><label for="s5">Website Design</label>
+          <input type="checkbox" id="s6" name="services" value="UI/UX Design"><label for="s6">UI/UX Design</label>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fMessage">Tell us about your project</label>
+        <textarea id="fMessage" name="message" required minlength="10" placeholder="Goals, timeline, what success looks like…"></textarea>
+        <span class="error" aria-live="polite"></span>
+      </div>
+      <input class="hp" type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button class="btn" type="submit">Send project enquiry <span class="arrow">→</span></button>
+      <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+  <div class="container reveal">
+    <span class="eyebrow">Data. Intelligence. Digital.</span>
+    <h2>Ready to turn ideas into <span class="accent">progress?</span></h2>
+    <a class="btn" href="#contact">Start a Project <span class="arrow">→</span></a>
+  </div>
+</section>
+
 </main>
-<footer class="footer"><div class="container"><div class="logo">ISHIAQ<span>TECH</span></div><p>Data. Intelligence. Digital.</p><div class="socials"><a href="https://www.linkedin.com/in/ishiaqtech/" target="_blank">LinkedIn</a><a href="https://www.facebook.com/Ishiaqtech" target="_blank">Facebook</a><a href="https://www.instagram.com/alao_ish/" target="_blank">Instagram</a></div></div></footer>
-<script>
-document.getElementById('menu').onclick=()=>document.getElementById('links').classList.toggle('open');
-document.querySelectorAll('.faqQ').forEach(b=>b.onclick=()=>b.parentElement.classList.toggle('active'));
-document.getElementById('form').addEventListener('submit',function(e){
-  e.preventDefault();
-  const form=e.target;
-  const data=new FormData(form);
-  const btn=form.querySelector('button.btn');
-  const originalText=btn.textContent;
-  btn.disabled=true;btn.textContent='Sending…';
-  fetch(form.action,{method:'POST',body:data,headers:{'Accept':'application/json'}})
-    .then(res=>{
-      if(res.ok){
-        document.getElementById('success').style.display='block';
-        form.reset();
-      }else{
-        alert('Something went wrong sending your message. Please try again or email us directly.');
-      }
-    })
-    .catch(()=>{alert('Something went wrong sending your message. Please try again or email us directly.');})
-    .finally(()=>{btn.disabled=false;btn.textContent=originalText;});
-});
-</script></body></html>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="#home">ISHIAQ<span>TECH</span></a>
+        <p style="margin-top:14px;max-width:320px">Data. Intelligence. Digital. Helping ambitious businesses turn complexity into clarity.</p>
+      </div>
+      <div>
+        <h4>Services</h4>
+        <ul><li><a href="#services">Data Analytics</a></li><li><a href="#services">Power BI</a></li><li><a href="#services">Website Design</a></li><li><a href="#services">UI/UX Design</a></li></ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul><li><a href="#work">Work</a></li><li><a href="#process">Process</a></li><li><a href="#about">About</a></li><li><a href="#faq">FAQ</a></li></ul>
+      </div>
+      <div>
+        <h4>Follow</h4>
+        <ul>
+          <li><a href="https://www.linkedin.com/in/ishiaqtech/" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://www.facebook.com/Ishiaqtech" target="_blank" rel="noopener">Facebook</a></li>
+          <li><a href="https://www.instagram.com/alao_ish/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span id="year">2026</span> IshiaqTech. All rights reserved.</span>
+      <span>Designed &amp; built by IshiaqTech</span>
+    </div>
+  </div>
+</footer>
+
+<button class="to-top" id="toTop" aria-label="Back to top">↑</button>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>
