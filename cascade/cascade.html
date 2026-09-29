@@ -64,6 +64,11 @@ dialog::backdrop{background:#000a}
 <body>
 <div id="app"></div>
 <dialog id="dlg"><form method="dialog" id="dlgForm"><h3 id="dlgTitle"></h3><div id="dlgBody"></div><div class="row end"><button type="button" class="btn ghost" data-a="closeDlg">Cancel</button><button class="btn" id="dlgOk">Save</button></div></form></dialog>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>// Paste your Supabase project values here to enable real accounts and shared teams.
+// Leave both empty to run in local, single-browser mode. The anon key is public by design; row-level security protects the data.
+window.CASCADE_CONFIG = { supabaseUrl: '', supabaseKey: '' };
+</script>
 <script>'use strict';
 /* Cascade: goals + time tracking. Data lives in this browser's localStorage. */
 const LEVELS = ['yearly', 'monthly', 'weekly', 'daily'];
@@ -72,7 +77,12 @@ const KEY = 'cascade.v1';
 const IDLE_MS = 2 * 3600e3;
 
 /* ---------- state ---------- */
-let S = load();
+const CFG = window.CASCADE_CONFIG || {};
+const CLOUD = !!(CFG.supabaseUrl && CFG.supabaseKey);
+const emptyState = () => ({ users: [], teams: [], goals: [], checkins: [], projects: [], entries: [], templates: [], dstats: [], invites: [], me: null, timer: null, selected: [] });
+let sb = null, pushTimer = null, pushing = false, dirty = false, lastPull = 0, synced = {};
+let S = CLOUD ? emptyState() : load();
+S.invites = S.invites || []; S.dstats = S.dstats || [];
 function load() {
   try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.users) return s; } catch (e) {}
   return {
@@ -81,8 +91,11 @@ function load() {
     goals: [], checkins: [], projects: [], entries: [], templates: [], me: null, timer: null, selected: []
   };
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
-const uid = p => p + Math.random().toString(36).slice(2, 9);
+function save() {
+  try { if (CLOUD) { if (S.me) localStorage.setItem('cascade.timer.' + S.me, JSON.stringify(S.timer)); } else localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+  if (CLOUD && sb && S.me) { clearTimeout(pushTimer); pushTimer = setTimeout(flush, 300); }
+}
+const uid = () => { const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = b[6] & 15 | 64; b[8] = b[8] & 63 | 128; const h = [...b].map(x => x.toString(16).padStart(2, '0')).join(''); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`; };
 const now = () => new Date().toISOString();
 const pad = n => String(n).padStart(2, '0');
 const dstr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -152,11 +165,12 @@ function deleteGoal(id) {
 
 /* ---------- stats (derived on demand, equivalent to DailyStats) ---------- */
 function entryMin(e) { return e.duration_minutes; }
-function stats(uidv, date) {
+function stats(uidv, date, noTimer) {
   const es = S.entries.filter(e => e.user_id === uidv && dayOf(e.start_time) === date);
-  const done = S.goals.filter(g => g.owner_id === uidv && g.level === 'daily' && g.completed_at && dayOf(g.completed_at) === date);
   let total = es.reduce((a, e) => a + entryMin(e), 0);
-  if (S.timer && S.timer.user_id === uidv && dayOf(new Date(S.timer.start).toISOString()) === date) total += (Date.now() - S.timer.start) / 60000;
+  if (!noTimer && S.timer && S.timer.user_id === uidv && dayOf(new Date(S.timer.start).toISOString()) === date) total += (Date.now() - S.timer.start) / 60000;
+  if (CLOUD && uidv !== S.me) { const d = S.dstats.find(x => x.user_id === uidv && x.date === date); return { total, tasks: d ? d.tasks_completed : 0, touched: d ? d.goals_touched : 0 }; }
+  const done = S.goals.filter(g => g.owner_id === uidv && g.level === 'daily' && g.completed_at && dayOf(g.completed_at) === date);
   return { total, tasks: done.length, touched: new Set(es.map(e => e.goal_id).filter(Boolean)).size };
 }
 function weekMinutes(uidv) {
@@ -195,6 +209,97 @@ setInterval(() => {
     else { stopTimer(t.lastConfirm + IDLE_MS); render(); }
   }
 }, 1000);
+
+
+/* ---------- cloud sync (Supabase) ---------- */
+const OWN = {
+  projects: r => r.owner_id === S.me, goals: r => r.owner_id === S.me, entries: r => r.user_id === S.me, templates: r => r.owner_id === S.me,
+  checkins: r => { const g = goal(r.goal_id); return !!g && g.owner_id === S.me; }
+};
+const TBL = { projects: 'projects', goals: 'goals', checkins: 'checkins', entries: 'time_entries', templates: 'templates' };
+const ORDER = ['projects', 'goals', 'checkins', 'entries', 'templates'];
+function rowOut(k, r) {
+  const o = { ...r };
+  if (k === 'goals') Object.assign(o, { target_date: o.target_date || null, completed_at: o.completed_at || null, parent_goal_id: o.parent_goal_id || null, override: !!o.override, archived: !!o.archived, progress: o.progress | 0, description: o.description || '' });
+  if (k === 'entries') Object.assign(o, { project_id: o.project_id || null, goal_id: o.goal_id || null, end_time: o.end_time || null, note: o.note || '' });
+  if (k === 'projects') Object.assign(o, { team_id: o.team_id || null, archived: !!o.archived });
+  return o;
+}
+function banner(msg) {
+  let el = $('#sync'); if (!el) { el = document.createElement('div'); el.id = 'sync'; el.style.cssText = 'position:fixed;right:12px;bottom:12px;background:#3a1a1a;border:1px solid var(--red);padding:8px 12px;font-size:12px;z-index:50'; document.body.appendChild(el); }
+  el.textContent = msg; el.style.display = msg ? 'block' : 'none';
+}
+async function fetchAll(t) {
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from(t).select('*').range(from, from + 999);
+    if (error) throw error; out.push(...data); if (data.length < 1000) return out;
+  }
+}
+async function pull() {
+  const names = ['profiles', 'teams', 'goals', 'checkins', 'projects', 'time_entries', 'templates', 'daily_stats', 'team_invites'];
+  const [pr, te, go, ci, pj, en, tp, ds, inv] = await Promise.all(names.map(fetchAll));
+  S.users = pr; S.teams = te; S.checkins = ci; S.projects = pj; S.entries = en; S.templates = tp; S.dstats = ds; S.invites = inv;
+  S.goals = go.map(g => ({ ...g, target_date: g.target_date || '' }));
+  synced = { ds: new Map() };
+  ORDER.forEach(k => { synced[k] = new Map(); S[k].filter(OWN[k]).forEach(r => synced[k].set(r.id, JSON.stringify(rowOut(k, r)))); });
+  lastPull = Date.now();
+}
+async function flush() {
+  if (!sb || !S.me) return;
+  if (pushing) { dirty = true; return; }
+  pushing = true;
+  try {
+    do {
+      dirty = false;
+      const owned = k => new Map(S[k].filter(OWN[k]).map(r => [r.id, JSON.stringify(rowOut(k, r))]));
+      for (const k of ORDER) {
+        const cur = owned(k), up = [...cur].filter(([id, j]) => synced[k].get(id) !== j);
+        if (up.length) { const { error } = await sb.from(TBL[k]).upsert(up.map(x => JSON.parse(x[1]))); if (error) throw error; up.forEach(([id, j]) => synced[k].set(id, j)); }
+      }
+      for (const k of [...ORDER].reverse()) {
+        const cur = owned(k), del = [...synced[k].keys()].filter(id => !cur.has(id));
+        if (del.length) { const { error } = await sb.from(TBL[k]).delete().in('id', del); if (error) throw error; del.forEach(id => synced[k].delete(id)); }
+      }
+      const rows = [];
+      for (let i = 0; i < 7; i++) { const d = dstr(new Date(Date.now() - i * 864e5)), s = stats(S.me, d, true); rows.push({ user_id: S.me, date: d, total_minutes: Math.round(s.total), tasks_completed: s.tasks, goals_touched: s.touched }); }
+      const ch = rows.filter(r => synced.ds.get(r.date) !== JSON.stringify(r));
+      if (ch.length) {
+        const { error } = await sb.from('daily_stats').upsert(ch); if (error) throw error;
+        ch.forEach(r => { synced.ds.set(r.date, JSON.stringify(r)); const i = S.dstats.findIndex(x => x.user_id === r.user_id && x.date === r.date); if (i < 0) S.dstats.push(r); else S.dstats[i] = r; });
+      }
+    } while (dirty);
+    banner('');
+  } catch (e) { banner('Sync failed: ' + (e.message || e) + ' (retrying)'); setTimeout(flush, 5000); }
+  finally { pushing = false; }
+}
+async function enter(u) {
+  S.me = u.id;
+  try { await sb.rpc('claim_team'); await pull(); } catch (e) { alert('Could not load your data: ' + (e.message || e)); }
+  try { S.timer = JSON.parse(localStorage.getItem('cascade.timer.' + S.me)); } catch (e) { S.timer = null; }
+  location.hash = '#/'; render();
+}
+async function boot() {
+  if (!CLOUD) { render(); return; }
+  if (!window.supabase) { $('#app').innerHTML = '<div class="login"><p>Could not load the Supabase library. Check your connection.</p></div>'; return; }
+  $('#app').innerHTML = '<div class="login"><p>Loading…</p></div>';
+  sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
+  sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') { S = emptyState(); synced = {}; render(); } });
+  const { data } = await sb.auth.getSession();
+  if (data.session) await enter(data.session.user); else render();
+}
+async function authSubmit(mode, fd) {
+  const msg = t => { const el = $('#authMsg'); if (el) el.textContent = t; };
+  msg('Working…');
+  const email = fd.email.trim(), password = fd.password;
+  const r = mode === 'signup' ? await sb.auth.signUp({ email, password, options: { data: { name: fd.name.trim() } } }) : await sb.auth.signInWithPassword({ email, password });
+  if (r.error) return msg(r.error.message);
+  if (!r.data.session) return msg('Check your email to confirm your account, then sign in.');
+  await enter(r.data.user);
+}
+document.addEventListener('visibilitychange', () => {
+  if (CLOUD && sb && S.me && !document.hidden && !pushing && !dirty && !$('#dlg').open && Date.now() - lastPull > 30000) pull().then(render).catch(() => {});
+});
 
 /* ---------- templates ---------- */
 function snapshot(id) {
@@ -324,8 +429,11 @@ function viewAdmin() {
    <div class="card stat"><b>${top && top.s.total > 0 ? esc(top.u.name) : '—'}</b><span>Most active</span></div>
    <div class="card stat"><b>${tasks}</b><span>Tasks done today</span></div><div class="card stat"><b>${ms.length}</b><span>Members</span></div></div>
   <table><tr><th>Member</th><th>Today</th><th>7 days</th><th>Tasks today</th><th>Active yearly goals</th></tr>
-  ${rows.map(({ u, s, w }) => `<tr><td><a href="#/admin/${u.id}" style="color:var(--lime)">${esc(u.name)}</a><div class="small muted">${u.role}</div></td><td>${fmtMin(s.total)}</td><td>${fmtMin(w)}</td><td>${s.tasks}</td>
-   <td>${S.goals.filter(g => g.owner_id === u.id && g.level === 'yearly' && !g.archived && g.status !== 'done').map(g => `${esc(g.title)} <b>${prog(g)}%</b>`).join('<br>') || '<span class="muted">none</span>'}</td></tr>`).join('')}</table>`);
+  ${rows.map(({ u, s, w }) => `<tr><td><a href="#/admin/${u.id}" style="color:var(--lime)">${esc(u.name)}</a><div class="small muted">${u.role}${CLOUD && u.id !== S.me ? ` · <a href="#" data-a="removeMember" data-id="${u.id}" style="color:var(--red)">remove</a>` : ''}</div></td><td>${fmtMin(s.total)}</td><td>${fmtMin(w)}</td><td>${s.tasks}</td>
+   <td>${S.goals.filter(g => g.owner_id === u.id && g.level === 'yearly' && !g.archived && g.status !== 'done').map(g => `${esc(g.title)} <b>${prog(g)}%</b>`).join('<br>') || '<span class="muted">none</span>'}</td></tr>`).join('')}</table>
+  ${CLOUD ? `<h2 style="margin-top:26px">Invite members</h2><form id="inviteForm" class="row"><input type="email" name="email" placeholder="member@email.com" required><button class="btn sm">Invite</button></form>
+   <p class="small">Invited people sign up with that email and join your team automatically.</p>
+   <div class="list">${S.invites.map(i => `<div class="item"><span class="grow">${esc(i.email)}</span><button class="icon" data-a="unInvite" data-email="${esc(i.email)}">Remove</button></div>`).join('')}</div>` : '<p class="small" style="margin-top:20px">Shared teams need cloud mode. See cascade/README.md.</p>'}`);
 }
 function viewMember(id) {
   const u = user(id);
@@ -368,7 +476,9 @@ function viewReports() {
   const r = reportData();
   const byDay = {}; r.entries.forEach(e => { const d = dayOf(e.start_time); byDay[d] = (byDay[d] || 0) + entryMin(e); });
   const timeData = Object.keys(byDay).sort().map(d => ({ l: d, v: Math.round(byDay[d] / 6) / 10 }));
-  const taskDay = {}; r.done.filter(g => g.level === 'daily').forEach(g => { const d = dayOf(g.completed_at); taskDay[d] = (taskDay[d] || 0) + 1; });
+  const taskDay = {};
+  if (CLOUD && r.restricted) S.dstats.filter(d => (r.who === 'all' ? teamMembers().some(u => u.id === d.user_id) : d.user_id === r.who) && d.date >= r.from && d.date <= r.to).forEach(d => { taskDay[d.date] = (taskDay[d.date] || 0) + d.tasks_completed; });
+  else r.done.filter(g => g.level === 'daily').forEach(g => { const d = dayOf(g.completed_at); taskDay[d] = (taskDay[d] || 0) + 1; });
   const taskData = Object.keys(taskDay).sort().map(d => ({ l: d, v: taskDay[d] }));
   const ms = r.done.filter(g => g.level !== 'daily').sort((a, b) => a.completed_at.localeCompare(b.completed_at));
   const cum = ms.map((g, i) => ({ l: dayOf(g.completed_at), v: i + 1 }));
@@ -380,7 +490,7 @@ function viewReports() {
    ${r.admin ? `<label>Member<select name="who">${opts(teamMembers(), r.who, u => [u.id, u.name])}<option value="all"${r.who === 'all' ? ' selected' : ''}>Whole team</option></select></label>` : ''}
    <button class="btn sm" style="align-self:end">Apply</button></form>
   ${r.restricted ? '<p class="small">Viewing other members: goal charts include yearly and monthly goals only.</p>' : ''}
-  <p><b>${fmtMin(total)}</b> tracked · <b>${r.done.filter(g => g.level === 'daily').length}</b> tasks done · <b>${ms.length}</b> milestones done</p>
+  <p><b>${fmtMin(total)}</b> tracked · <b>${taskData.reduce((a, d) => a + d.v, 0)}</b> tasks done · <b>${ms.length}</b> milestones done</p>
   <h2>Time tracked per day (hours)</h2>${svgBars(timeData)}
   <h2 style="margin-top:20px">Tasks completed per day</h2>${svgBars(taskData, '#5be08a')}
   <h2 style="margin-top:20px">Goal progress over time (cumulative milestones completed)</h2>${svgLine(cum)}
@@ -424,6 +534,11 @@ function viewSettings() {
 }
 
 function viewLogin() {
+  if (CLOUD) return `<div class="login"><div class="logo" style="font-size:32px">Casc<span style="color:var(--lime)">ade</span></div><p>Goals and time tracking by IshiaqTech.</p>
+  <form id="cloudauth"><label>Name (new accounts)<input name="name" autocomplete="name"></label><label>Email<input name="email" type="email" required autocomplete="email"></label>
+  <label>Password<input name="password" type="password" minlength="6" required autocomplete="current-password"></label>
+  <div class="row" style="margin-top:14px"><button class="btn" value="signin">Sign in</button><button class="btn ghost" value="signup">Create account</button></div></form>
+  <p id="authMsg" class="small" style="color:var(--yellow)">${S.me ? 'Signed in, but no profile was found. Run supabase/schema.sql, then sign out and back in.' : ''}</p>${S.me ? '<a href="#" data-a="logout" style="color:var(--lime)">Sign out</a>' : ''}</div>`;
   return `<div class="login"><div class="logo" style="font-size:32px">Casc<span style="color:var(--lime)">ade</span></div><p>Goals and time tracking by IshiaqTech. Data stays in this browser.</p>
   <h3 style="margin-top:20px">Sign in</h3><div class="list">${S.users.map(u => `<div class="item"><div class="grow">${esc(u.name)}<div class="small muted">${esc(u.email)} · ${u.role}</div></div><button class="btn sm" data-a="login" data-id="${u.id}">Open</button></div>`).join('')}</div>
   <h3 style="margin-top:24px">Add a team member</h3><form id="signup"><label>Name<input name="name" required></label><label>Email<input name="email" type="email" required></label><button class="btn" style="margin-top:12px">Create account</button></form>
@@ -470,9 +585,11 @@ const actions = {
   },
   notifyPerm() { if (window.Notification) Notification.requestPermission().then(render); },
   backup() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' })); a.download = 'cascade-backup.json'; a.click(); },
-  restore() { $('#restoreFile').click(); },
+  restore() { if (CLOUD) return alert('Restore is only available in local mode.'); $('#restoreFile').click(); },
   delEntry(el) { S.entries = S.entries.filter(e => e.id !== el.dataset.id); save(); render(); },
-  logout() { S.me = null; save(); render(); },
+  logout() { if (CLOUD) { sb.auth.signOut(); return; } S.me = null; save(); render(); },
+  unInvite(el) { sb.from('team_invites').delete().eq('email', el.dataset.email).then(({ error }) => { if (error) return alert(error.message); S.invites = S.invites.filter(i => i.email !== el.dataset.email); render(); }); },
+  removeMember(el) { if (confirm('Remove this member from the team? Their goals stay private to them.')) sb.rpc('remove_member', { target: el.dataset.id }).then(({ error }) => { if (error) return alert(error.message); return pull().then(render); }); },
   login(el) { S.me = el.dataset.id; save(); location.hash = '#/'; render(); },
   closeDlg() { $('#dlg').close(); },
   toggle(el) { const g = goal(el.dataset.id); if (canEdit(g)) { changeStatus(g.id, g.status === 'done' ? 'not_started' : 'done'); render(); } },
@@ -567,6 +684,11 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('submit', e => {
   if (e.target.id === 'rf') { e.preventDefault(); sessionStorage.rf = JSON.stringify(Object.fromEntries(new FormData(e.target))); render(); }
+  if (e.target.id === 'cloudauth') { e.preventDefault(); authSubmit(e.submitter && e.submitter.value, Object.fromEntries(new FormData(e.target))); }
+  if (e.target.id === 'inviteForm') {
+    e.preventDefault(); const email = new FormData(e.target).get('email').trim().toLowerCase();
+    sb.from('team_invites').upsert({ email, team_id: me().team_id }).then(({ error }) => { if (error) return alert(error.message); if (!S.invites.some(i => i.email === email)) S.invites.push({ email, team_id: me().team_id }); render(); });
+  }
   if (e.target.id === 'signup') {
     e.preventDefault(); const fd = Object.fromEntries(new FormData(e.target)); const email = fd.email.trim().toLowerCase();
     let u = S.users.find(x => x.email.toLowerCase() === email);
@@ -575,7 +697,7 @@ document.addEventListener('submit', e => {
   }
 });
 setInterval(() => { const el = document.querySelector('.live-today'); if (el && S.timer && S.timer.user_id === S.me) el.textContent = fmtMin(stats(S.me, today()).total); }, 30000);
-render();
+boot();
 </script>
 </body>
 </html>
