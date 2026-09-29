@@ -25,10 +25,17 @@ assets/js/main.js     # interactivity
 ## Run locally
 Open `index.html` in a browser, or run `python3 -m http.server` and visit http://localhost:8000.
 
-## Deploy
-Works as-is on GitHub Pages, Netlify, Vercel or any static host.
+## Launch on GitHub Pages
+1. Merge this branch into `main`.
+2. In the repo, go to **Settings → Pages**. Under *Build and deployment*, choose **Deploy from a branch**, then `main` and `/ (root)`, and save.
+3. After a minute or two the site is live at https://ishiaqtechagencyio-sudo.github.io/Ishiaqtech/
+
+Already set up for launch: canonical URL, social-share image (`assets/img/og-image.png`), favicon and Apple touch icon, `robots.txt`, `sitemap.xml`, a branded `404.html` and `.nojekyll`.
+
+**Using a custom domain later?** Replace `https://ishiaqtechagencyio-sudo.github.io/Ishiaqtech/` in `index.html`, `robots.txt` and `sitemap.xml`, and change the `/Ishiaqtech/` links in `404.html` to `/`.
 
 ## Customise
-- **Founder photo**: add `assets/img/founder.jpg`, then follow the comment in the About section of `index.html`.
+- **Founder photo**: upload a portrait (4:5 ratio works best) as `assets/img/founder.jpg`. It replaces the "IT" monogram automatically.
+- **Projects**: the "What we build" section shows example projects. When you have client work you can share (with permission), swap in the real names and results in the `#work` section of `index.html`.
 - **Brand colours**: edit the variables at the top of `assets/css/styles.css`.
 - **Form endpoint**: change the `action` URL on `#contactForm`.

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ishiaqtechagencyio-sudo.github.io/Ishiaqtech/sitemap.xml
