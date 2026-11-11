@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IshiaqTech Studio | Words. Design. Web. Film.</title>
+<meta name="description" content="A creative studio for writing and translation, graphic design, website design, and video production and editing.">
+<style>
+/* ---------- Tokens ---------- */
+:root{--bg:#07080b;--ink:#f3efe8;--muted:#a49f95;--gold:#e6c27a;--line:rgba(243,239,232,.16);
+--serif:"Cormorant Garamond","Playfair Display",Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+*{box-sizing:border-box;margin:0}html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.eyebrow{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+h1,h2{font-family:var(--serif);font-weight:500;letter-spacing:-.02em;line-height:.95}
+h1{font-size:clamp(56px,11vw,168px)}h2{font-size:clamp(52px,9vw,140px)}
+.btn{display:inline-block;padding:15px 28px;border:1px solid var(--gold);color:var(--gold);letter-spacing:.14em;font-size:12px;text-transform:uppercase;background:none;cursor:pointer;transition:.3s}
+.btn:hover,.btn.solid{background:var(--gold);color:#111}
+
+/* ---------- Nav ---------- */
+.nav{position:fixed;inset:0 0 auto;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:22px clamp(20px,4vw,56px);mix-blend-mode:difference}
+.logo{font-family:var(--serif);font-size:24px;letter-spacing:.08em}
+.nav nav{display:flex;gap:30px;font-size:12px;letter-spacing:.2em;text-transform:uppercase}
+.progress{position:fixed;left:0;top:0;height:2px;width:calc(var(--sp,0)*100%);background:var(--gold);z-index:60}
+.dots{position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:50;display:grid;gap:12px}
+.dots a{width:8px;height:8px;border-radius:50%;border:1px solid var(--ink);opacity:.5;transition:.3s}
+.dots a.on{background:var(--gold);border-color:var(--gold);opacity:1;transform:scale(1.4)}
+
+/* ---------- Scenes (scroll-driven) ---------- */
+.scene{position:relative;height:260vh;--p:0}
+.stage{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;place-items:center}
+/* Background slot: set --img to a photo, or add <video class="bgvid">. Gradient is the fallback. */
+.bg{position:absolute;inset:-6%;background:var(--img,none) center/cover no-repeat,var(--grad);transform:scale(calc(1 + var(--p)*.22)) translateY(calc(var(--p)*-4%));will-change:transform}
+.bgvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,8,11,.55),rgba(7,8,11,.15) 40%,rgba(7,8,11,.85))}
+.copy{position:relative;z-index:5;width:min(1180px,calc(100% - 48px));display:grid;gap:22px;
+ opacity:clamp(0,calc(min(var(--p)*7,(1 - var(--p))*7)),1);transform:translateY(calc((.5 - var(--p))*80px))}
+.s4 h2{font-size:clamp(44px,6.6vw,104px)}.copy p{max-width:520px;color:#d4cfc4;font-size:clamp(15px,1.5vw,18px)}
+.num{font-family:var(--serif);color:var(--gold);font-size:20px}
+.tags{display:flex;flex-wrap:wrap;gap:10px}
+.tags span{border:1px solid var(--line);padding:6px 14px;font-size:12px;letter-spacing:.1em;color:var(--ink);backdrop-filter:blur(6px)}
+.art{position:absolute;z-index:3;inset:0;pointer-events:none}
+
+/* HERO */
+.hero .bg{--grad:radial-gradient(ellipse at 50% 38%,#ffd9a0 0,#f08d4a 14%,#6b3a5c 38%,#1a1630 62%,#07080b 90%)}
+.hero .cloud{position:absolute;left:-10%;right:-10%;height:46%;bottom:-6%;background:radial-gradient(ellipse at 20% 60%,rgba(255,255,255,.5),transparent 55%),radial-gradient(ellipse at 70% 70%,rgba(255,220,190,.4),transparent 55%),radial-gradient(ellipse at 45% 90%,rgba(20,18,40,.95),transparent 70%);filter:blur(14px);transform:translateY(calc(var(--p)*-40%)) scale(calc(1 + var(--p)*.5))}
+.hero .cloud.b{height:38%;opacity:.7;transform:translateY(calc(var(--p)*-90%)) scale(calc(1.2 + var(--p)))}
+.hero .copy{text-align:center;padding-bottom:40px;justify-items:center;opacity:clamp(0,calc(1 - var(--p)*2.2),1)}
+.scroll{position:absolute;bottom:8px;z-index:6;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);opacity:calc(1 - var(--p)*5)}
+.scroll:after{content:"";display:block;width:1px;height:22px;margin:6px auto 0;background:var(--gold);animation:drip 1.8s infinite}
+@keyframes drip{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* 01 WRITING */
+.s1 .bg{--grad:linear-gradient(160deg,#1d1a14,#2c2418 50%,#0d0c0a)}
+.word{position:absolute;z-index:1;opacity:.8;font-family:var(--serif);color:rgba(230,194,122,.5);white-space:nowrap;transform:translate(calc(var(--p)*var(--dx)),calc(var(--p)*var(--dy)));font-size:var(--s)}
+/* 02 GRAPHIC */
+.s2 .bg{--grad:linear-gradient(200deg,#1a0f24,#3a1741 55%,#0b0610)}
+.shape{position:absolute;transform:translateY(calc(var(--p)*var(--dy))) rotate(calc(var(--p)*var(--r)))}
+/* 03 WEB */
+.s3 .bg{--grad:linear-gradient(170deg,#0c1a24,#0f3b4a 55%,#060c11)}
+.browser{position:absolute;right:6%;top:50%;width:min(46vw,560px);aspect-ratio:4/3;border:1px solid rgba(255,255,255,.25);background:rgba(10,20,28,.6);backdrop-filter:blur(8px);transform:translateY(calc(-50% + (.5 - var(--p))*120px)) perspective(900px) rotateY(calc(-18deg + var(--p)*14deg));padding:12px}
+.browser i{display:block;background:rgba(255,255,255,.12);margin-bottom:10px;height:10px}
+.browser .hd{height:60px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.5}
+.browser .row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.browser .row i{height:90px}
+/* 04 VIDEO */
+.s4 .bg{--grad:linear-gradient(190deg,#240d0d,#4a1a14 50%,#0c0505)}
+.frame{position:absolute;right:5%;top:20%;width:min(36vw,470px);aspect-ratio:16/9;border:1px solid rgba(255,255,255,.35);background:radial-gradient(circle at 60% 40%,rgba(255,180,120,.5),rgba(20,8,8,.9));transform:translateY(calc((.5 - var(--p))*100px))}
+.frame:before{content:"REC ●";position:absolute;left:12px;top:10px;font-size:11px;letter-spacing:.2em;color:#ff6b5e}
+.timeline{position:absolute;right:5%;top:calc(20% + min(36vw,470px)*.5625 + 28px);width:min(36vw,470px);height:46px;border:1px solid var(--line);background:repeating-linear-gradient(90deg,rgba(255,255,255,.1) 0 38px,transparent 38px 42px)}
+.timeline:after{content:"";position:absolute;top:-8px;bottom:-8px;left:calc(var(--p)*100%);width:2px;background:var(--gold)}
+
+/* ---------- Static sections ---------- */
+.sec{padding:130px 0;border-top:1px solid var(--line)}
+.wrap{width:min(1180px,calc(100% - 48px));margin:auto}
+.process{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:50px}
+.process div{border-top:1px solid var(--gold);padding-top:20px}.process h3{font-family:var(--serif);font-size:30px;font-weight:500;margin:6px 0}.process p{color:var(--muted);font-size:15px}
+.contact{display:grid;grid-template-columns:1fr 1fr;gap:60px}
+form{display:grid;gap:14px}
+input,textarea,select{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--ink);padding:14px 2px;font:inherit}
+select option{background:#111}textarea{min-height:120px}
+input:focus,textarea:focus,select:focus{outline:0;border-color:var(--gold)}
+.ok{display:none;color:var(--gold)}
+footer{padding:40px 0;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+@media(max-width:800px){.nav nav{display:none}.dots{display:none}.process{grid-template-columns:1fr 1fr}.contact{grid-template-columns:1fr;gap:40px}
+ .browser,.frame,.timeline{opacity:.35;right:-8%}.word{font-size:calc(var(--s)*.6)}}
+@media(prefers-reduced-motion:reduce){.scene{height:auto}.stage{position:relative;min-height:100vh}.copy{opacity:1;transform:none}.bg,.cloud{transform:none!important}.scroll:after{animation:none}}
+</style></head><body>
+<div class="progress"></div>
+<header class="nav"><a class="logo" href="#top">IshiaqTech Studio</a><nav><a href="#writing">Words</a><a href="#graphic">Graphic</a><a href="#web">Web</a><a href="#video">Film</a><a href="#contact">Contact</a></nav></header>
+<div class="dots" id="dots"><a href="#top"></a><a href="#writing"></a><a href="#graphic"></a><a href="#web"></a><a href="#video"></a><a href="#contact"></a></div>
+
+<main id="top">
+<!-- HERO -->
+<section class="scene hero" style="height:200vh"><div class="stage">
+ <div class="bg" style="--img:url(assets/hero.jpg)"></div><div class="cloud b"></div><div class="cloud"></div><div class="shade"></div>
+ <div class="copy"><div class="eyebrow">Creative studio</div><h1>Make it<br>unforgettable.</h1><p>Writing &amp; translation, graphic design, websites and video, under one roof.</p><a class="btn solid" href="#writing">Begin the journey</a></div>
+ <div class="scroll">Scroll</div></div></section>
+
+<!-- 01 -->
+<section class="scene s1" id="writing"><div class="stage">
+ <div class="bg" style="--img:url(assets/writing.jpg)"></div><div class="shade"></div>
+ <div class="art">
+  <span class="word" style="right:34%;top:14%;--s:64px;--dx:80px;--dy:-60px">Hello</span><span class="word" style="right:10%;top:20%;--s:56px;--dx:-60px;--dy:-90px">مرحبا</span>
+  <span class="word" style="right:9%;bottom:7%;--s:72px;--dx:-60px;--dy:-40px">Bonjour</span><span class="word" style="right:8%;bottom:24%;--s:60px;--dx:-90px;--dy:-70px">你好</span>
+  <span class="word" style="right:3%;top:36%;--s:48px;--dx:-40px;--dy:-100px">Bawo ni</span><span class="word" style="right:40%;top:50%;--s:52px;--dx:60px;--dy:-60px">Hola</span></div>
+ <div class="copy"><div class="num">01</div><h2>Writing &amp;<br>Translation</h2>
+  <p>Copy that sounds written, not converted. We write original content to your brief and translate with transcreation, carrying tone and intent across languages, then edit it in a separate review pass.</p>
+  <div class="tags"><span>Brand &amp; web copy</span><span>Transcreation</span><span>Translation &amp; proofreading</span><span>Scripts &amp; captions (SRT/VTT)</span></div></div></div></section>
+
+<!-- 02 -->
+<section class="scene s2" id="graphic"><div class="stage">
+ <div class="bg" style="--img:url(assets/graphic.jpg)"></div><div class="shade"></div>
+ <div class="art">
+  <div class="shape" style="right:12%;top:18%;width:260px;height:260px;border-radius:50%;background:var(--gold);opacity:.85;--dy:90px;--r:0deg"></div>
+  <div class="shape" style="right:22%;top:34%;width:220px;height:220px;border:2px solid #fff;--dy:-80px;--r:75deg"></div>
+  <div class="shape" style="right:6%;top:48%;width:0;height:0;border-left:110px solid transparent;border-right:110px solid transparent;border-bottom:190px solid #c2407a;opacity:.8;--dy:-120px;--r:-40deg"></div></div>
+ <div class="copy"><div class="num">02</div><h2>Graphic<br>Design</h2>
+  <p>Identities and visuals with a point of view. From logo and brand system to social, print and pitch decks, delivered as production-ready files in the formats your team uses.</p>
+  <div class="tags"><span>Logo &amp; identity</span><span>Brand guidelines</span><span>Social &amp; campaign</span><span>Print &amp; decks</span></div></div></div></section>
+
+<!-- 03 -->
+<section class="scene s3" id="web"><div class="stage">
+ <div class="bg" style="--img:url(assets/web.jpg)"></div><div class="shade"></div>
+ <div class="art"><div class="browser"><i class="hd"></i><i style="width:70%"></i><i style="width:45%"></i><div class="row"><i></i><i></i><i></i></div><i style="width:80%"></i><i style="width:60%"></i></div></div>
+ <div class="copy"><div class="num">03</div><h2>Website<br>Design</h2>
+  <p>Fast, responsive sites designed to explain your value and turn visitors into enquiries. Layout, build, bilingual pages, forms and SEO basics, launched and handed over cleanly.</p>
+  <div class="tags"><span>UI/UX design</span><span>Responsive build</span><span>Multilingual sites</span><span>SEO setup</span></div></div></div></section>
+
+<!-- 04 -->
+<section class="scene s4" id="video"><div class="stage">
+ <div class="bg" style="--img:url(assets/video.jpg)"></div><div class="shade"></div>
+ <div class="art"><div class="frame"></div><div class="timeline"></div></div>
+ <div class="copy"><div class="num">04</div><h2>Video Production<br>&amp; Editing</h2>
+  <p>From raw footage to a finished story. We shoot, cut, colour grade, mix sound and add motion graphics, plus subtitles in multiple languages, cut for every platform.</p>
+  <div class="tags"><span>Shooting &amp; direction</span><span>Editing &amp; colour</span><span>Motion graphics</span><span>Subtitles &amp; reels</span></div></div></div></section>
+
+<section class="sec" id="process"><div class="wrap"><div class="eyebrow">How we work</div><h2 style="font-size:clamp(40px,6vw,84px);margin-top:14px">Brief to delivery.</h2>
+ <div class="process"><div><span class="num">01</span><h3>Brief</h3><p>We learn your audience, goals and tone.</p></div><div><span class="num">02</span><h3>Create</h3><p>Drafts, concepts and first cuts to react to.</p></div><div><span class="num">03</span><h3>Refine</h3><p>Revision rounds and a separate quality review.</p></div><div><span class="num">04</span><h3>Deliver</h3><p>Final files in the formats you need.</p></div></div></div></section>
+
+<section class="sec" id="contact"><div class="wrap contact"><div><div class="eyebrow">Start a project</div><h2 style="font-size:clamp(44px,7vw,100px);margin:14px 0 24px">Let's make<br>something.</h2><p style="color:var(--muted)">Ishiaqtechagency.io@gmail.com<br>+234 903 977 4992</p></div>
+ <form id="form" action="https://formspree.io/f/xbgjenge" method="POST"><input required name="name" placeholder="Your name"><input required type="email" name="email" placeholder="Email address">
+  <select name="service"><option value="">Choose a service</option><option>Writing &amp; Translation</option><option>Graphic Design</option><option>Website Design</option><option>Video Production &amp; Editing</option></select>
+  <textarea required name="message" placeholder="Tell us about your project"></textarea><button class="btn solid" type="submit">Send enquiry →</button><div class="ok" id="ok">Thank you! We'll be in touch soon.</div></form></div></section>
+</main>
+<footer><div class="wrap"><span>© IshiaqTech Studio</span><span><a href="https://www.linkedin.com/in/ishiaqtech/">LinkedIn</a> · <a href="https://www.facebook.com/Ishiaqtech">Facebook</a> · <a href="https://www.instagram.com/alao_ish/">Instagram</a></span></div></footer>
+
+<script>
+const scenes=[...document.querySelectorAll('.scene')],bar=document.querySelector('.progress'),
+ dots=[...document.querySelectorAll('#dots a')],targets=['#top','#writing','#graphic','#web','#video','#contact'].map(s=>document.querySelector(s));
+let tick=false;
+function update(){
+  const vh=innerHeight;
+  scenes.forEach(s=>{const r=s.getBoundingClientRect();s.style.setProperty('--p',Math.min(1,Math.max(0,-r.top/(r.height-vh))).toFixed(4))});
+  const max=document.documentElement.scrollHeight-vh;document.documentElement.style.setProperty('--sp',(scrollY/max).toFixed(4));
+  bar.style.width=(scrollY/max*100)+'%';
+  let cur=0;targets.forEach((t,i)=>{if(t.getBoundingClientRect().top<vh*.5)cur=i});
+  dots.forEach((d,i)=>d.classList.toggle('on',i===cur));tick=false}
+addEventListener('scroll',()=>{if(!tick){tick=true;requestAnimationFrame(update)}},{passive:true});addEventListener('resize',update);update();
+document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();const f=e.target,b=f.querySelector('button'),t=b.textContent;b.disabled=true;b.textContent='Sending…';
+ fetch(f.action,{method:'POST',body:new FormData(f),headers:{Accept:'application/json'}}).then(r=>{if(r.ok){document.getElementById('ok').style.display='block';f.reset()}else throw 0}).catch(()=>alert('Something went wrong. Please try again or email us directly.')).finally(()=>{b.disabled=false;b.textContent=t})});
+</script></body></html>
